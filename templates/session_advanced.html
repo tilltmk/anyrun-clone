@@ -1,0 +1,268 @@
+{% extends "base.html" %}
+
+{% block title %}Advanced Analysis - AnyRun Clone{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="session-header">
+        <div class="header-row">
+            <div>
+                <h2>Advanced Analysis Session</h2>
+                <p class="session-id">Session ID: <code>{{ session_id }}</code></p>
+            </div>
+            <div class="header-actions">
+                <a href="/api/session/{{ session_id }}/export/json" class="btn btn-small" download>Export JSON</a>
+                <a href="/session/{{ session_id }}/report" class="btn btn-small btn-primary">Full Report</a>
+            </div>
+        </div>
+        <div class="status-indicator" id="statusIndicator">
+            <span class="status-badge" id="statusBadge">Loading...</span>
+        </div>
+    </div>
+
+    <div class="analysis-grid">
+        <div class="info-section">
+            <div class="info-card">
+                <h3>File Information</h3>
+                <div id="fileDetails">
+                    <p>Loading file details...</p>
+                </div>
+            </div>
+
+            <div class="threat-score-card" id="threatScoreCard" style="display: none;">
+                <h3>Threat Assessment</h3>
+                <div class="threat-meter">
+                    <div class="threat-bar">
+                        <div class="threat-fill" id="threatFill"></div>
+                    </div>
+                    <p class="threat-label" id="threatLabel">Calculating...</p>
+                </div>
+            </div>
+
+            <div class="stats-cards">
+                <div class="mini-stat-card">
+                    <h4 id="behaviorCount">0</h4>
+                    <p>Behaviors</p>
+                </div>
+                <div class="mini-stat-card">
+                    <h4 id="networkCount">0</h4>
+                    <p>Network Events</p>
+                </div>
+                <div class="mini-stat-card">
+                    <h4 id="processCount">0</h4>
+                    <p>Processes</p>
+                </div>
+                <div class="mini-stat-card">
+                    <h4 id="iocCount">0</h4>
+                    <p>IOCs</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="analysis-main">
+            <div class="analysis-tabs-advanced">
+                <div class="tabs-scrollable">
+                    <button class="tab-btn active" data-tab="overview">Overview</button>
+                    <button class="tab-btn" data-tab="behavior">Behavior</button>
+                    <button class="tab-btn" data-tab="network">Network</button>
+                    <button class="tab-btn" data-tab="processes">Processes</button>
+                    <button class="tab-btn" data-tab="dropped">Dropped Files</button>
+                    <button class="tab-btn" data-tab="iocs">IOCs</button>
+                    <button class="tab-btn" data-tab="mitre">MITRE ATT&CK</button>
+                    <button class="tab-btn" data-tab="strings">Strings</button>
+                    <button class="tab-btn" data-tab="mutexes">Mutexes</button>
+                    <button class="tab-btn" data-tab="memory">Memory</button>
+                    <button class="tab-btn" data-tab="screenshots">Screenshots</button>
+                    <button class="tab-btn" data-tab="yara">YARA</button>
+                    <button class="tab-btn" data-tab="timeline">Timeline</button>
+                    <button class="tab-btn" data-tab="certificates">Certificates</button>
+                </div>
+
+                <div class="tab-content-area">
+                    <!-- Overview Panel -->
+                    <div class="tab-panel active" id="overview-panel">
+                        <h3>Analysis Overview</h3>
+                        <div id="overviewContent">
+                            <p>Waiting for analysis to complete...</p>
+                        </div>
+                    </div>
+
+                    <!-- Behavior Panel -->
+                    <div class="tab-panel" id="behavior-panel">
+                        <h3>Behavioral Events</h3>
+                        <div id="behaviorEvents"></div>
+                    </div>
+
+                    <!-- Network Panel -->
+                    <div class="tab-panel" id="network-panel">
+                        <h3>Network Activity</h3>
+                        <div id="networkEvents"></div>
+                    </div>
+
+                    <!-- Processes Panel -->
+                    <div class="tab-panel" id="processes-panel">
+                        <h3>Process Tree</h3>
+                        <div id="processTree"></div>
+                    </div>
+
+                    <!-- Dropped Files Panel -->
+                    <div class="tab-panel" id="dropped-panel">
+                        <h3>Dropped Files</h3>
+                        <div id="droppedFiles"></div>
+                    </div>
+
+                    <!-- IOCs Panel -->
+                    <div class="tab-panel" id="iocs-panel">
+                        <h3>Indicators of Compromise</h3>
+                        <div class="ioc-filter">
+                            <button class="filter-btn active" data-filter="all">All</button>
+                            <button class="filter-btn" data-filter="ip">IPs</button>
+                            <button class="filter-btn" data-filter="domain">Domains</button>
+                            <button class="filter-btn" data-filter="url">URLs</button>
+                            <button class="filter-btn" data-filter="hash">Hashes</button>
+                        </div>
+                        <div id="iocsList"></div>
+                    </div>
+
+                    <!-- MITRE Panel -->
+                    <div class="tab-panel" id="mitre-panel">
+                        <h3>MITRE ATT&CK Framework</h3>
+                        <div id="mitreList"></div>
+                    </div>
+
+                    <!-- Strings Panel -->
+                    <div class="tab-panel" id="strings-panel">
+                        <h3>Extracted Strings</h3>
+                        <div class="strings-filter">
+                            <button class="filter-btn active" data-filter="all">All</button>
+                            <button class="filter-btn" data-filter="url">URLs</button>
+                            <button class="filter-btn" data-filter="ip">IPs</button>
+                            <button class="filter-btn" data-filter="email">Emails</button>
+                            <button class="filter-btn" data-filter="path">Paths</button>
+                            <button class="filter-btn" data-filter="suspicious">Suspicious</button>
+                        </div>
+                        <div id="stringsList"></div>
+                    </div>
+
+                    <!-- Mutexes Panel -->
+                    <div class="tab-panel" id="mutexes-panel">
+                        <h3>Mutexes & Handles</h3>
+                        <div id="mutexesList"></div>
+                    </div>
+
+                    <!-- Memory Panel -->
+                    <div class="tab-panel" id="memory-panel">
+                        <h3>Memory Regions</h3>
+                        <div id="memoryList"></div>
+                    </div>
+
+                    <!-- Screenshots Panel -->
+                    <div class="tab-panel" id="screenshots-panel">
+                        <h3>Sandbox Screenshots</h3>
+                        <div id="screenshotsList" class="screenshots-grid"></div>
+                    </div>
+
+                    <!-- YARA Panel -->
+                    <div class="tab-panel" id="yara-panel">
+                        <h3>YARA Rule Matches</h3>
+                        <div id="yaraList"></div>
+                    </div>
+
+                    <!-- Timeline Panel -->
+                    <div class="tab-panel" id="timeline-panel">
+                        <h3>Complete Timeline</h3>
+                        <div id="timelineView" class="timeline-container"></div>
+                    </div>
+
+                    <!-- Certificates Panel -->
+                    <div class="tab-panel" id="certificates-panel">
+                        <h3>Code Signing Certificates</h3>
+                        <div id="certificatesList"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="{{ url_for('static', filename='js/advanced_session.js') }}"></script>
+<script>
+const sessionId = '{{ session_id }}';
+let pollInterval;
+let currentFilter = 'all';
+
+// Initialize advanced session viewer
+document.addEventListener('DOMContentLoaded', () => {
+    initTabs();
+    loadAllData();
+    pollInterval = setInterval(loadAllData, 3000);
+});
+
+function initTabs() {
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const tabName = btn.dataset.tab;
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+            btn.classList.add('active');
+            document.getElementById(`${tabName}-panel`).classList.add('active');
+        });
+    });
+
+    // Filter buttons
+    document.querySelectorAll('.filter-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            this.parentElement.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+            currentFilter = this.dataset.filter;
+            applyFilter();
+        });
+    });
+}
+
+async function loadAllData() {
+    try {
+        const response = await fetch(`/api/session/${sessionId}`);
+        const data = await response.json();
+
+        if (data.error) return;
+
+        updateSessionInfo(data);
+        updateBehaviors(data.behaviors);
+        updateNetworkEvents(data.network_events);
+        updateProcesses(data.processes);
+        updateDroppedFiles(data.dropped_files);
+        updateIOCs(data.iocs);
+        updateMitre(data.mitre_attacks);
+        updateStrings(data.strings);
+        updateMutexes(data.mutexes);
+        updateMemory(data.memory_regions);
+        updateScreenshots(data.screenshots);
+        updateYara(data.yara_matches);
+        updateCertificates(data.certificates);
+        updateThreatScore(data.threat_score);
+        updateCounts(data);
+
+        if (data.session.status === 'completed') {
+            clearInterval(pollInterval);
+            document.getElementById('statusBadge').textContent = 'Completed';
+            document.getElementById('statusBadge').className = 'status-badge status-completed';
+        }
+
+        // Load timeline separately
+        loadTimeline();
+    } catch (error) {
+        console.error('Error loading data:', error);
+    }
+}
+
+function updateCounts(data) {
+    document.getElementById('behaviorCount').textContent = data.behaviors.length;
+    document.getElementById('networkCount').textContent = data.network_events.length;
+    document.getElementById('processCount').textContent = data.processes.length;
+    document.getElementById('iocCount').textContent = data.iocs.length;
+}
+
+// Implementation of all update functions is in advanced_session.js
+</script>
+{% endblock %}

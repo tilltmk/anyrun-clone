@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Analysis Report - {{ session_id }}</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: #f5f5f5;
+            padding: 20px;
+        }
+        .report-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            padding: 40px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+        }
+        .report-header {
+            border-bottom: 3px solid #667eea;
+            padding-bottom: 20px;
+            margin-bottom: 30px;
+        }
+        .report-header h1 {
+            color: #667eea;
+            font-size: 32px;
+            margin-bottom: 10px;
+        }
+        .report-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            background: #f9f9f9;
+            border-left: 4px solid #667eea;
+        }
+        .report-section h2 {
+            color: #667eea;
+            margin-bottom: 15px;
+            font-size: 24px;
+        }
+        .report-section h3 {
+            color: #444;
+            margin: 15px 0 10px 0;
+            font-size: 18px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 15px 0;
+        }
+        table th {
+            background: #667eea;
+            color: white;
+            padding: 10px;
+            text-align: left;
+        }
+        table td {
+            padding: 10px;
+            border-bottom: 1px solid #ddd;
+        }
+        table tr:hover {
+            background: #f5f5f5;
+        }
+        .threat-score {
+            font-size: 48px;
+            font-weight: bold;
+            text-align: center;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        .threat-critical { color: #e74c3c; }
+        .threat-high { color: #e67e22; }
+        .threat-medium { color: #f39c12; }
+        .threat-low { color: #27ae60; }
+        .badge {
+            display: inline-block;
+            padding: 5px 10px;
+            border-radius: 3px;
+            font-size: 12px;
+            font-weight: bold;
+            color: white;
+        }
+        .badge-critical { background: #e74c3c; }
+        .badge-high { background: #e67e22; }
+        .badge-medium { background: #f39c12; }
+        .badge-low { background: #27ae60; }
+        code {
+            background: #f0f0f0;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+        }
+        .print-btn {
+            background: #667eea;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 20px 0;
+        }
+        .print-btn:hover {
+            background: #5568d3;
+        }
+        @media print {
+            .print-btn { display: none; }
+            .report-container { box-shadow: none; }
+        }
+        .ioc-list {
+            list-style: none;
+            padding: 0;
+        }
+        .ioc-list li {
+            padding: 8px;
+            margin: 5px 0;
+            background: white;
+            border-radius: 3px;
+        }
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        .summary-card {
+            background: white;
+            padding: 15px;
+            border-radius: 5px;
+            text-align: center;
+        }
+        .summary-card h3 {
+            font-size: 32px;
+            color: #667eea;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="report-container">
+        <div class="report-header">
+            <h1>🔒 Malware Analysis Report</h1>
+            <p><strong>Session ID:</strong> <code>{{ session_id }}</code></p>
+            <p><strong>Generated:</strong> {{ now().strftime('%Y-%m-%d %H:%M:%S') }}</p>
+        </div>
+
+        <button class="print-btn" onclick="window.print()">Print Report</button>
+
+        <div id="report-content">
+            <p>Loading comprehensive analysis report...</p>
+        </div>
+    </div>
+
+    <script>
+        const sessionId = '{{ session_id }}';
+
+        async function loadReport() {
+            try {
+                const response = await fetch(`/api/session/${sessionId}`);
+                const data = await response.json();
+
+                if (data.error) {
+                    document.getElementById('report-content').innerHTML = `<p>Error: ${data.error}</p>`;
+                    return;
+                }
+
+                generateReport(data);
+            } catch (error) {
+                document.getElementById('report-content').innerHTML = `<p>Error loading report: ${error}</p>`;
+            }
+        }
+
+        function generateReport(data) {
+            const session = data.session;
+            const threatClass = data.threat_score > 70 ? 'threat-critical' :
+                               data.threat_score > 40 ? 'threat-high' :
+                               data.threat_score > 20 ? 'threat-medium' : 'threat-low';
+
+            const html = `
+                <div class="report-section">
+                    <h2>Executive Summary</h2>
+                    <div class="threat-score ${threatClass}">
+                        Threat Score: ${data.threat_score}/100
+                    </div>
+                    <div class="summary-grid">
+                        <div class="summary-card">
+                            <p>Behavioral Events</p>
+                            <h3>${data.behaviors.length}</h3>
+                        </div>
+                        <div class="summary-card">
+                            <p>Network Events</p>
+                            <h3>${data.network_events.length}</h3>
+                        </div>
+                        <div class="summary-card">
+                            <p>IOCs Found</p>
+                            <h3>${data.iocs.length}</h3>
+                        </div>
+                        <div class="summary-card">
+                            <p>YARA Matches</p>
+                            <h3>${data.yara_matches.length}</h3>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="report-section">
+                    <h2>File Information</h2>
+                    <table>
+                        <tr><td><strong>Filename</strong></td><td>${session.filename}</td></tr>
+                        <tr><td><strong>SHA256</strong></td><td><code>${session.file_hash}</code></td></tr>
+                        <tr><td><strong>File Size</strong></td><td>${formatFileSize(session.file_size)}</td></tr>
+                        <tr><td><strong>File Type</strong></td><td>${session.file_type}</td></tr>
+                        <tr><td><strong>Analysis Date</strong></td><td>${new Date(session.created_at).toLocaleString()}</td></tr>
+                    </table>
+                </div>
+
+                ${data.yara_matches.length > 0 ? `
+                <div class="report-section">
+                    <h2>YARA Rule Matches</h2>
+                    <table>
+                        <tr>
+                            <th>Rule Name</th>
+                            <th>Category</th>
+                            <th>Severity</th>
+                            <th>Description</th>
+                        </tr>
+                        ${data.yara_matches.map(y => `
+                            <tr>
+                                <td><strong>${y.rule_name}</strong></td>
+                                <td>${y.category}</td>
+                                <td><span class="badge badge-${y.severity}">${y.severity}</span></td>
+                                <td>${y.description}</td>
+                            </tr>
+                        `).join('')}
+                    </table>
+                </div>
+                ` : ''}
+
+                ${data.mitre_attacks.length > 0 ? `
+                <div class="report-section">
+                    <h2>MITRE ATT&CK Techniques</h2>
+                    <table>
+                        <tr>
+                            <th>Technique ID</th>
+                            <th>Name</th>
+                            <th>Tactic</th>
+                            <th>Evidence</th>
+                        </tr>
+                        ${data.mitre_attacks.map(m => `
+                            <tr>
+                                <td><strong>${m.technique_id}</strong></td>
+                                <td>${m.technique_name}</td>
+                                <td>${m.tactic}</td>
+                                <td>${m.evidence}</td>
+                            </tr>
+                        `).join('')}
+                    </table>
+                </div>
+                ` : ''}
+
+                ${data.iocs.length > 0 ? `
+                <div class="report-section">
+                    <h2>Indicators of Compromise (IOCs)</h2>
+                    <h3>Domains</h3>
+                    <ul class="ioc-list">
+                        ${data.iocs.filter(i => i.ioc_type === 'domain').map(i =>
+                            `<li><code>${i.value}</code> - ${i.description}</li>`
+                        ).join('') || '<li>None found</li>'}
+                    </ul>
+                    <h3>IP Addresses</h3>
+                    <ul class="ioc-list">
+                        ${data.iocs.filter(i => i.ioc_type === 'ip').map(i =>
+                            `<li><code>${i.value}</code> - ${i.description}</li>`
+                        ).join('') || '<li>None found</li>'}
+                    </ul>
+                    <h3>URLs</h3>
+                    <ul class="ioc-list">
+                        ${data.iocs.filter(i => i.ioc_type === 'url').map(i =>
+                            `<li><code>${i.value}</code> - ${i.description}</li>`
+                        ).join('') || '<li>None found</li>'}
+                    </ul>
+                </div>
+                ` : ''}
+
+                ${data.processes.length > 0 ? `
+                <div class="report-section">
+                    <h2>Process Activity</h2>
+                    <table>
+                        <tr>
+                            <th>PID</th>
+                            <th>Process Name</th>
+                            <th>Command Line</th>
+                            <th>Status</th>
+                        </tr>
+                        ${data.processes.map(p => `
+                            <tr>
+                                <td>${p.pid}</td>
+                                <td><strong>${p.process_name}</strong></td>
+                                <td><code>${p.command_line || 'N/A'}</code></td>
+                                <td>${p.status}</td>
+                            </tr>
+                        `).join('')}
+                    </table>
+                </div>
+                ` : ''}
+
+                ${data.network_events.length > 0 ? `
+                <div class="report-section">
+                    <h2>Network Activity</h2>
+                    <table>
+                        <tr>
+                            <th>Protocol</th>
+                            <th>Destination</th>
+                            <th>Domain/URL</th>
+                        </tr>
+                        ${data.network_events.map(n => `
+                            <tr>
+                                <td>${n.protocol}</td>
+                                <td>${n.destination_ip}:${n.destination_port || 'N/A'}</td>
+                                <td>${n.domain || n.url || 'N/A'}</td>
+                            </tr>
+                        `).join('')}
+                    </table>
+                </div>
+                ` : ''}
+
+                ${data.dropped_files.length > 0 ? `
+                <div class="report-section">
+                    <h2>Dropped Files</h2>
+                    <table>
+                        <tr>
+                            <th>Filename</th>
+                            <th>Path</th>
+                            <th>Size</th>
+                            <th>Malicious</th>
+                        </tr>
+                        ${data.dropped_files.map(f => `
+                            <tr>
+                                <td><strong>${f.file_name}</strong></td>
+                                <td><code>${f.file_path}</code></td>
+                                <td>${formatFileSize(f.file_size)}</td>
+                                <td>${f.is_malicious ? '<span class="badge badge-critical">YES</span>' : 'No'}</td>
+                            </tr>
+                        `).join('')}
+                    </table>
+                </div>
+                ` : ''}
+
+                <div class="report-section">
+                    <h2>Behavioral Events</h2>
+                    <table>
+                        <tr>
+                            <th>Type</th>
+                            <th>Description</th>
+                            <th>Severity</th>
+                        </tr>
+                        ${data.behaviors.map(b => `
+                            <tr>
+                                <td>${b.event_type}</td>
+                                <td>${b.description}</td>
+                                <td><span class="badge badge-${b.severity}">${b.severity}</span></td>
+                            </tr>
+                        `).join('')}
+                    </table>
+                </div>
+
+                <div class="report-section">
+                    <h2>Conclusion</h2>
+                    <p><strong>Analysis Status:</strong> ${session.status}</p>
+                    <p><strong>Overall Risk Assessment:</strong> ${threatClass.replace('threat-', '').toUpperCase()}</p>
+                    <p>This report contains a comprehensive analysis of the submitted file.
+                    The threat score is calculated based on behavioral patterns, network activity,
+                    and matched detection rules. Further manual analysis is recommended for critical threats.</p>
+                </div>
+            `;
+
+            document.getElementById('report-content').innerHTML = html;
+        }
+
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + ' ' + sizes[i];
+        }
+
+        // Load report on page load
+        loadReport();
+    </script>
+</body>
+</html>

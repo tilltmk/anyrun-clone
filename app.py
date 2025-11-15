@@ -1,11 +1,16 @@
-from flask import Flask, render_template, request, jsonify, redirect, url_for, send_from_directory
+from flask import Flask, render_template, request, jsonify, redirect, url_for, send_from_directory, send_file
 from werkzeug.utils import secure_filename
 import os
 import uuid
 import threading
+import json
 from datetime import datetime
-from models import db, AnalysisSession, BehaviorEvent, NetworkEvent
-from analyzer import SandboxAnalyzer
+from models import (
+    db, AnalysisSession, BehaviorEvent, NetworkEvent, ProcessEvent,
+    DroppedFile, IOC, MitreAttack, StringAnalysis, MutexHandle,
+    MemoryRegion, Screenshot, YaraMatch, Certificate
+)
+from advanced_analyzer import AdvancedAnalyzer
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'dev-secret-key-change-in-production'
@@ -28,8 +33,8 @@ db.init_app(app)
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 os.makedirs(app.config['RESULTS_FOLDER'], exist_ok=True)
 
-# Initialize analyzer
-analyzer = SandboxAnalyzer()
+# Initialize advanced analyzer
+analyzer = AdvancedAnalyzer()
 
 
 def allowed_file(filename):
@@ -97,7 +102,7 @@ def view_session(session_id):
     if not session:
         return "Session not found", 404
 
-    return render_template('session.html', session_id=session_id)
+    return render_template('session_advanced.html', session_id=session_id)
 
 
 @app.route('/api/session/<session_id>')
@@ -176,6 +181,196 @@ def get_stats():
 @app.errorhandler(413)
 def too_large(e):
     return jsonify({'error': 'File too large. Maximum size is 100MB'}), 413
+
+
+@app.route('/api/session/<session_id>/processes')
+def get_processes(session_id):
+    """Get process tree for a session"""
+    processes = ProcessEvent.query.filter_by(session_id=session_id).all()
+    return jsonify([p.to_dict() for p in processes])
+
+
+@app.route('/api/session/<session_id>/dropped-files')
+def get_dropped_files(session_id):
+    """Get dropped files for a session"""
+    files = DroppedFile.query.filter_by(session_id=session_id).all()
+    return jsonify([f.to_dict() for f in files])
+
+
+@app.route('/api/session/<session_id>/iocs')
+def get_iocs(session_id):
+    """Get IOCs for a session"""
+    iocs = IOC.query.filter_by(session_id=session_id).all()
+    return jsonify([i.to_dict() for i in iocs])
+
+
+@app.route('/api/session/<session_id>/mitre')
+def get_mitre(session_id):
+    """Get MITRE ATT&CK mappings for a session"""
+    mitre = MitreAttack.query.filter_by(session_id=session_id).all()
+    return jsonify([m.to_dict() for m in mitre])
+
+
+@app.route('/api/session/<session_id>/strings')
+def get_strings(session_id):
+    """Get extracted strings for a session"""
+    page = request.args.get('page', 1, type=int)
+    per_page = request.args.get('per_page', 50, type=int)
+
+    strings = StringAnalysis.query.filter_by(session_id=session_id).paginate(
+        page=page, per_page=per_page, error_out=False
+    )
+
+    return jsonify({
+        'strings': [s.to_dict() for s in strings.items],
+        'total': strings.total,
+        'pages': strings.pages,
+        'current_page': page
+    })
+
+
+@app.route('/api/session/<session_id>/mutexes')
+def get_mutexes(session_id):
+    """Get mutexes and handles for a session"""
+    mutexes = MutexHandle.query.filter_by(session_id=session_id).all()
+    return jsonify([m.to_dict() for m in mutexes])
+
+
+@app.route('/api/session/<session_id>/memory')
+def get_memory(session_id):
+    """Get memory regions for a session"""
+    regions = MemoryRegion.query.filter_by(session_id=session_id).all()
+    return jsonify([r.to_dict() for r in regions])
+
+
+@app.route('/api/session/<session_id>/screenshots')
+def get_screenshots(session_id):
+    """Get screenshots for a session"""
+    screenshots = Screenshot.query.filter_by(session_id=session_id).all()
+    return jsonify([s.to_dict() for s in screenshots])
+
+
+@app.route('/api/session/<session_id>/screenshot/<filename>')
+def get_screenshot_file(session_id, filename):
+    """Download a specific screenshot"""
+    screenshot_path = os.path.join(app.config['RESULTS_FOLDER'], session_id, 'screenshots', filename)
+    if os.path.exists(screenshot_path):
+        return send_file(screenshot_path, mimetype='image/png')
+    return jsonify({'error': 'Screenshot not found'}), 404
+
+
+@app.route('/api/session/<session_id>/yara')
+def get_yara(session_id):
+    """Get YARA matches for a session"""
+    matches = YaraMatch.query.filter_by(session_id=session_id).all()
+    return jsonify([m.to_dict() for m in matches])
+
+
+@app.route('/api/session/<session_id>/certificates')
+def get_certificates(session_id):
+    """Get certificate information for a session"""
+    certs = Certificate.query.filter_by(session_id=session_id).all()
+    return jsonify([c.to_dict() for c in certs])
+
+
+@app.route('/api/session/<session_id>/timeline')
+def get_timeline(session_id):
+    """Get complete timeline of all events"""
+    timeline = []
+
+    # Collect all events with timestamps
+    behaviors = BehaviorEvent.query.filter_by(session_id=session_id).all()
+    for b in behaviors:
+        timeline.append({
+            'timestamp': b.timestamp.isoformat() if b.timestamp else None,
+            'type': 'behavior',
+            'category': b.event_type,
+            'description': b.description,
+            'severity': b.severity
+        })
+
+    network = NetworkEvent.query.filter_by(session_id=session_id).all()
+    for n in network:
+        timeline.append({
+            'timestamp': n.timestamp.isoformat() if n.timestamp else None,
+            'type': 'network',
+            'category': n.protocol,
+            'description': f'{n.protocol} connection to {n.domain or n.destination_ip}',
+            'severity': 'medium'
+        })
+
+    processes = ProcessEvent.query.filter_by(session_id=session_id).all()
+    for p in processes:
+        timeline.append({
+            'timestamp': p.timestamp.isoformat() if p.timestamp else None,
+            'type': 'process',
+            'category': p.status,
+            'description': f'{p.process_name} (PID: {p.pid})',
+            'severity': 'medium'
+        })
+
+    dropped = DroppedFile.query.filter_by(session_id=session_id).all()
+    for d in dropped:
+        timeline.append({
+            'timestamp': d.timestamp.isoformat() if d.timestamp else None,
+            'type': 'file',
+            'category': 'dropped_file',
+            'description': f'Dropped file: {d.file_name}',
+            'severity': 'high' if d.is_malicious else 'low'
+        })
+
+    # Sort by timestamp
+    timeline.sort(key=lambda x: x['timestamp'] or '')
+
+    return jsonify(timeline)
+
+
+@app.route('/api/session/<session_id>/export/<format>')
+def export_report(session_id, format):
+    """Export analysis report in various formats"""
+    details = analyzer.get_session_details(session_id)
+    if not details:
+        return jsonify({'error': 'Session not found'}), 404
+
+    if format == 'json':
+        return jsonify(details)
+
+    elif format == 'html':
+        # Generate HTML report
+        return render_template('report.html', data=details, session_id=session_id)
+
+    else:
+        return jsonify({'error': 'Unsupported format. Use json or html'}), 400
+
+
+@app.route('/session/<session_id>/report')
+def view_report(session_id):
+    """View comprehensive analysis report"""
+    session = AnalysisSession.query.filter_by(session_id=session_id).first()
+    if not session:
+        return "Session not found", 404
+
+    return render_template('report.html', session_id=session_id)
+
+
+@app.route('/api/search')
+def search_sessions():
+    """Search sessions by various criteria"""
+    query = request.args.get('q', '')
+    search_type = request.args.get('type', 'filename')
+
+    if search_type == 'filename':
+        sessions = AnalysisSession.query.filter(
+            AnalysisSession.filename.like(f'%{query}%')
+        ).limit(50).all()
+    elif search_type == 'hash':
+        sessions = AnalysisSession.query.filter(
+            AnalysisSession.file_hash.like(f'%{query}%')
+        ).limit(50).all()
+    else:
+        sessions = []
+
+    return jsonify([s.to_dict() for s in sessions])
 
 
 @app.errorhandler(404)
