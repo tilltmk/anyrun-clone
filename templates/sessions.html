@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+
+{% block title %}All Sessions - AnyRun Clone{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="page-header">
+        <h2>Analysis Sessions</h2>
+        <p>View all past and current analysis sessions</p>
+    </div>
+
+    <div class="sessions-list">
+        {% if sessions %}
+            <table class="sessions-table">
+                <thead>
+                    <tr>
+                        <th>Session ID</th>
+                        <th>Filename</th>
+                        <th>File Type</th>
+                        <th>Status</th>
+                        <th>Created</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for session in sessions %}
+                    <tr>
+                        <td><code>{{ session.session_id[:16] }}...</code></td>
+                        <td>{{ session.filename }}</td>
+                        <td>{{ session.file_type }}</td>
+                        <td><span class="status-badge status-{{ session.status }}">{{ session.status }}</span></td>
+                        <td>{{ session.created_at.strftime('%Y-%m-%d %H:%M') if session.created_at else 'N/A' }}</td>
+                        <td>
+                            <a href="{{ url_for('view_session', session_id=session.session_id) }}" class="btn btn-small">View</a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <div class="empty-state">
+                <p>No analysis sessions found.</p>
+                <a href="{{ url_for('index') }}" class="btn btn-primary">Upload a File</a>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

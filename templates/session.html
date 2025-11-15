@@ -1,0 +1,214 @@
+{% extends "base.html" %}
+
+{% block title %}Session Analysis - AnyRun Clone{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="session-header">
+        <h2>Analysis Session</h2>
+        <p class="session-id">Session ID: <code>{{ session_id }}</code></p>
+        <div class="status-indicator" id="statusIndicator">
+            <span class="status-badge" id="statusBadge">Loading...</span>
+        </div>
+    </div>
+
+    <div class="session-info" id="sessionInfo">
+        <div class="info-card">
+            <h3>File Information</h3>
+            <div id="fileDetails">
+                <p>Loading file details...</p>
+            </div>
+        </div>
+
+        <div class="threat-score-card" id="threatScoreCard" style="display: none;">
+            <h3>Threat Assessment</h3>
+            <div class="threat-meter">
+                <div class="threat-bar">
+                    <div class="threat-fill" id="threatFill"></div>
+                </div>
+                <p class="threat-label" id="threatLabel">Calculating...</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="analysis-tabs">
+        <div class="tabs">
+            <button class="tab-btn active" data-tab="overview">Overview</button>
+            <button class="tab-btn" data-tab="behavior">Behavior</button>
+            <button class="tab-btn" data-tab="network">Network</button>
+        </div>
+
+        <div class="tab-content">
+            <div class="tab-panel active" id="overview-panel">
+                <h3>Analysis Overview</h3>
+                <div id="overviewContent">
+                    <p>Waiting for analysis to complete...</p>
+                </div>
+            </div>
+
+            <div class="tab-panel" id="behavior-panel">
+                <h3>Behavioral Events</h3>
+                <div id="behaviorEvents">
+                    <p>No events recorded yet...</p>
+                </div>
+            </div>
+
+            <div class="tab-panel" id="network-panel">
+                <h3>Network Activity</h3>
+                <div id="networkEvents">
+                    <p>No network activity recorded yet...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+const sessionId = '{{ session_id }}';
+let pollInterval;
+
+// Tab switching
+document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+        const tabName = btn.dataset.tab;
+
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+
+        btn.classList.add('active');
+        document.getElementById(`${tabName}-panel`).classList.add('active');
+    });
+});
+
+// Load session data
+async function loadSessionData() {
+    try {
+        const response = await fetch(`/api/session/${sessionId}`);
+        const data = await response.json();
+
+        if (data.error) {
+            console.error('Error loading session:', data.error);
+            return;
+        }
+
+        updateSessionInfo(data);
+        updateBehaviors(data.behaviors);
+        updateNetworkEvents(data.network_events);
+        updateThreatScore(data.threat_score);
+
+        if (data.session.status === 'completed') {
+            clearInterval(pollInterval);
+            document.getElementById('statusBadge').textContent = 'Completed';
+            document.getElementById('statusBadge').className = 'status-badge status-completed';
+        }
+    } catch (error) {
+        console.error('Error fetching session data:', error);
+    }
+}
+
+function updateSessionInfo(data) {
+    const fileDetails = document.getElementById('fileDetails');
+    fileDetails.innerHTML = `
+        <table class="info-table">
+            <tr><td><strong>Filename:</strong></td><td>${data.session.filename}</td></tr>
+            <tr><td><strong>File Hash (SHA256):</strong></td><td><code>${data.session.file_hash}</code></td></tr>
+            <tr><td><strong>File Size:</strong></td><td>${formatFileSize(data.session.file_size)}</td></tr>
+            <tr><td><strong>File Type:</strong></td><td>${data.session.file_type}</td></tr>
+            <tr><td><strong>Status:</strong></td><td><span class="status-badge status-${data.session.status}">${data.session.status}</span></td></tr>
+            <tr><td><strong>Created:</strong></td><td>${formatDate(data.session.created_at)}</td></tr>
+        </table>
+    `;
+
+    if (data.session.status === 'analyzing') {
+        document.getElementById('statusBadge').textContent = 'Analyzing';
+        document.getElementById('statusBadge').className = 'status-badge status-analyzing';
+    }
+}
+
+function updateBehaviors(behaviors) {
+    const container = document.getElementById('behaviorEvents');
+
+    if (!behaviors || behaviors.length === 0) {
+        container.innerHTML = '<p>No behavioral events recorded yet...</p>';
+        return;
+    }
+
+    container.innerHTML = behaviors.map(event => `
+        <div class="event-item severity-${event.severity}">
+            <div class="event-header">
+                <span class="event-type">${event.event_type}</span>
+                <span class="severity-badge severity-${event.severity}">${event.severity}</span>
+            </div>
+            <p class="event-description">${event.description}</p>
+            <p class="event-time">${formatDate(event.timestamp)}</p>
+        </div>
+    `).join('');
+}
+
+function updateNetworkEvents(events) {
+    const container = document.getElementById('networkEvents');
+
+    if (!events || events.length === 0) {
+        container.innerHTML = '<p>No network activity recorded yet...</p>';
+        return;
+    }
+
+    container.innerHTML = events.map(event => `
+        <div class="event-item network-event">
+            <div class="event-header">
+                <span class="protocol-badge">${event.protocol}</span>
+                ${event.domain ? `<span class="domain">${event.domain}</span>` : ''}
+            </div>
+            <p><strong>Source:</strong> ${event.source_ip}</p>
+            <p><strong>Destination:</strong> ${event.destination_ip}:${event.destination_port || 'N/A'}</p>
+            ${event.url ? `<p><strong>URL:</strong> <code>${event.url}</code></p>` : ''}
+            <p class="event-time">${formatDate(event.timestamp)}</p>
+        </div>
+    `).join('');
+}
+
+function updateThreatScore(score) {
+    const card = document.getElementById('threatScoreCard');
+    const fill = document.getElementById('threatFill');
+    const label = document.getElementById('threatLabel');
+
+    card.style.display = 'block';
+    fill.style.width = score + '%';
+
+    let threatLevel = 'Low';
+    let colorClass = 'threat-low';
+
+    if (score > 70) {
+        threatLevel = 'Critical';
+        colorClass = 'threat-critical';
+    } else if (score > 40) {
+        threatLevel = 'High';
+        colorClass = 'threat-high';
+    } else if (score > 20) {
+        threatLevel = 'Medium';
+        colorClass = 'threat-medium';
+    }
+
+    fill.className = `threat-fill ${colorClass}`;
+    label.innerHTML = `<strong>${score}/100</strong> - ${threatLevel} Risk`;
+}
+
+function formatFileSize(bytes) {
+    if (bytes < 1024) return bytes + ' B';
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(2) + ' KB';
+    return (bytes / (1024 * 1024)).toFixed(2) + ' MB';
+}
+
+function formatDate(dateStr) {
+    if (!dateStr) return 'N/A';
+    const date = new Date(dateStr);
+    return date.toLocaleString();
+}
+
+// Poll for updates every 2 seconds while analyzing
+pollInterval = setInterval(loadSessionData, 2000);
+
+// Initial load
+loadSessionData();
+</script>
+{% endblock %}

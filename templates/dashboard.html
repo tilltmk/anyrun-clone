@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - AnyRun Clone{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="page-header">
+        <h2>Analysis Dashboard</h2>
+        <p>Overview of all analysis activities</p>
+    </div>
+
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-icon">📊</div>
+            <h3 id="totalSessions">0</h3>
+            <p>Total Sessions</p>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon">✅</div>
+            <h3 id="completedSessions">0</h3>
+            <p>Completed</p>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon">⏳</div>
+            <h3 id="analyzingSessions">0</h3>
+            <p>Analyzing</p>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon">❌</div>
+            <h3 id="errorSessions">0</h3>
+            <p>Errors</p>
+        </div>
+    </div>
+
+    <div class="recent-sessions">
+        <h3>Recent Sessions</h3>
+        <div id="recentSessionsList">
+            <p>Loading...</p>
+        </div>
+    </div>
+</div>
+
+<script>
+async function loadStats() {
+    try {
+        const response = await fetch('/api/stats');
+        const data = await response.json();
+
+        document.getElementById('totalSessions').textContent = data.total_sessions;
+        document.getElementById('completedSessions').textContent = data.completed;
+        document.getElementById('analyzingSessions').textContent = data.analyzing;
+        document.getElementById('errorSessions').textContent = data.errors;
+    } catch (error) {
+        console.error('Error loading stats:', error);
+    }
+}
+
+async function loadRecentSessions() {
+    try {
+        const response = await fetch('/api/sessions');
+        const sessions = await response.json();
+
+        const container = document.getElementById('recentSessionsList');
+
+        if (sessions.length === 0) {
+            container.innerHTML = '<p>No sessions found.</p>';
+            return;
+        }
+
+        container.innerHTML = `
+            <table class="sessions-table">
+                <thead>
+                    <tr>
+                        <th>Filename</th>
+                        <th>Status</th>
+                        <th>Created</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${sessions.slice(0, 10).map(session => `
+                        <tr>
+                            <td>${session.filename}</td>
+                            <td><span class="status-badge status-${session.status}">${session.status}</span></td>
+                            <td>${new Date(session.created_at).toLocaleString()}</td>
+                            <td>
+                                <a href="/session/${session.session_id}" class="btn btn-small">View</a>
+                            </td>
+                        </tr>
+                    `).join('')}
+                </tbody>
+            </table>
+        `;
+    } catch (error) {
+        console.error('Error loading sessions:', error);
+    }
+}
+
+// Load data on page load
+loadStats();
+loadRecentSessions();
+
+// Refresh every 5 seconds
+setInterval(() => {
+    loadStats();
+    loadRecentSessions();
+}, 5000);
+</script>
+{% endblock %}

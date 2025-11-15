@@ -1,0 +1,184 @@
+{% extends "base.html" %}
+
+{% block title %}Upload File - AnyRun Clone{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="hero">
+        <h2>Interactive Malware Analysis Sandbox</h2>
+        <p>Upload a file to analyze its behavior in a secure sandbox environment</p>
+    </div>
+
+    <div class="upload-section">
+        <div class="upload-card">
+            <h3>Upload File for Analysis</h3>
+
+            <div class="upload-area" id="uploadArea">
+                <div class="upload-icon">📁</div>
+                <p>Drag & drop file here or click to browse</p>
+                <input type="file" id="fileInput" accept=".exe,.dll,.pdf,.docx,.xlsx,.zip,.rar,.js,.vbs,.bat,.ps1,.py,.jar,.apk" style="display: none;">
+                <button class="btn btn-primary" onclick="document.getElementById('fileInput').click()">Select File</button>
+            </div>
+
+            <div class="file-info" id="fileInfo" style="display: none;">
+                <h4>Selected File:</h4>
+                <p id="fileName"></p>
+                <button class="btn btn-success" id="uploadBtn">Start Analysis</button>
+                <button class="btn btn-secondary" id="cancelBtn">Cancel</button>
+            </div>
+
+            <div class="upload-progress" id="uploadProgress" style="display: none;">
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progressFill"></div>
+                </div>
+                <p id="progressText">Uploading...</p>
+            </div>
+
+            <div class="supported-formats">
+                <h4>Supported File Types:</h4>
+                <div class="format-tags">
+                    <span class="tag">EXE</span>
+                    <span class="tag">DLL</span>
+                    <span class="tag">PDF</span>
+                    <span class="tag">DOCX</span>
+                    <span class="tag">ZIP</span>
+                    <span class="tag">JS</span>
+                    <span class="tag">BAT</span>
+                    <span class="tag">PS1</span>
+                    <span class="tag">PY</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="features">
+        <h3>Features</h3>
+        <div class="feature-grid">
+            <div class="feature-card">
+                <div class="feature-icon">🔍</div>
+                <h4>Behavioral Analysis</h4>
+                <p>Monitor file system, registry, and process activities</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">🌐</div>
+                <h4>Network Monitoring</h4>
+                <p>Track DNS queries, HTTP requests, and TCP connections</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">📊</div>
+                <h4>Threat Scoring</h4>
+                <p>Automatic threat assessment based on observed behavior</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">⏱️</div>
+                <h4>Real-time Results</h4>
+                <p>View analysis results as they happen</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+const fileInput = document.getElementById('fileInput');
+const uploadArea = document.getElementById('uploadArea');
+const fileInfo = document.getElementById('fileInfo');
+const fileName = document.getElementById('fileName');
+const uploadBtn = document.getElementById('uploadBtn');
+const cancelBtn = document.getElementById('cancelBtn');
+const uploadProgress = document.getElementById('uploadProgress');
+const progressFill = document.getElementById('progressFill');
+const progressText = document.getElementById('progressText');
+
+let selectedFile = null;
+
+// Drag and drop handlers
+uploadArea.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    uploadArea.classList.add('drag-over');
+});
+
+uploadArea.addEventListener('dragleave', () => {
+    uploadArea.classList.remove('drag-over');
+});
+
+uploadArea.addEventListener('drop', (e) => {
+    e.preventDefault();
+    uploadArea.classList.remove('drag-over');
+
+    const files = e.dataTransfer.files;
+    if (files.length > 0) {
+        handleFileSelect(files[0]);
+    }
+});
+
+fileInput.addEventListener('change', (e) => {
+    if (e.target.files.length > 0) {
+        handleFileSelect(e.target.files[0]);
+    }
+});
+
+function handleFileSelect(file) {
+    selectedFile = file;
+    fileName.textContent = `${file.name} (${formatFileSize(file.size)})`;
+    uploadArea.style.display = 'none';
+    fileInfo.style.display = 'block';
+}
+
+cancelBtn.addEventListener('click', () => {
+    selectedFile = null;
+    fileInput.value = '';
+    uploadArea.style.display = 'block';
+    fileInfo.style.display = 'none';
+});
+
+uploadBtn.addEventListener('click', async () => {
+    if (!selectedFile) return;
+
+    const formData = new FormData();
+    formData.append('file', selectedFile);
+
+    fileInfo.style.display = 'none';
+    uploadProgress.style.display = 'block';
+    progressText.textContent = 'Uploading...';
+
+    try {
+        const response = await fetch('/upload', {
+            method: 'POST',
+            body: formData
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+            progressFill.style.width = '100%';
+            progressText.textContent = 'Upload complete! Redirecting...';
+
+            setTimeout(() => {
+                window.location.href = `/session/${data.session_id}`;
+            }, 1000);
+        } else {
+            alert('Error: ' + data.error);
+            resetUpload();
+        }
+    } catch (error) {
+        alert('Upload failed: ' + error.message);
+        resetUpload();
+    }
+});
+
+function resetUpload() {
+    selectedFile = null;
+    fileInput.value = '';
+    uploadArea.style.display = 'block';
+    fileInfo.style.display = 'none';
+    uploadProgress.style.display = 'none';
+    progressFill.style.width = '0%';
+}
+
+function formatFileSize(bytes) {
+    if (bytes < 1024) return bytes + ' B';
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(2) + ' KB';
+    return (bytes / (1024 * 1024)).toFixed(2) + ' MB';
+}
+</script>
+{% endblock %}
