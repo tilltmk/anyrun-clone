@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="de" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AnyRun Clone - Interactive Malware Analysis</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/modern_style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <!-- Modern Navigation -->
+    <nav class="modern-nav">
+        <div class="nav-container">
+            <div class="nav-brand">
+                <i class="fas fa-shield-virus"></i>
+                <span>AnyRun Clone</span>
+                <span class="beta-badge">PRO</span>
+            </div>
+            <ul class="nav-links">
+                <li><a href="/" class="active"><i class="fas fa-home"></i> Home</a></li>
+                <li><a href="/sessions"><i class="fas fa-history"></i> Sessions</a></li>
+                <li><a href="/dashboard"><i class="fas fa-chart-line"></i> Dashboard</a></li>
+                <li><a href="#"><i class="fas fa-cog"></i> Settings</a></li>
+            </ul>
+            <div class="nav-actions">
+                <button class="theme-toggle" onclick="toggleTheme()">
+                    <i class="fas fa-moon"></i>
+                </button>
+                <div class="user-menu">
+                    <i class="fas fa-user-circle"></i>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero-section">
+        <div class="hero-content">
+            <h1 class="hero-title">
+                <span class="gradient-text">Interactive Malware Analysis</span>
+            </h1>
+            <p class="hero-subtitle">
+                Analyze suspicious files in real-time with KVM-powered virtual machines
+            </p>
+            <div class="hero-features">
+                <div class="feature-badge">
+                    <i class="fas fa-desktop"></i>
+                    <span>Real VMs</span>
+                </div>
+                <div class="feature-badge">
+                    <i class="fas fa-network-wired"></i>
+                    <span>Network Capture</span>
+                </div>
+                <div class="feature-badge">
+                    <i class="fas fa-video"></i>
+                    <span>Video Recording</span>
+                </div>
+                <div class="feature-badge">
+                    <i class="fas fa-shield-alt"></i>
+                    <span>Safe Sandbox</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Upload Section -->
+    <section class="upload-section">
+        <div class="upload-container">
+            <div class="upload-card modern-card">
+                <div class="card-header">
+                    <h2><i class="fas fa-upload"></i> Start Analysis</h2>
+                    <p>Upload a file or provide a URL to begin</p>
+                </div>
+
+                <div class="upload-tabs">
+                    <button class="upload-tab active" data-tab="file">
+                        <i class="fas fa-file"></i> File Upload
+                    </button>
+                    <button class="upload-tab" data-tab="url">
+                        <i class="fas fa-link"></i> URL Analysis
+                    </button>
+                </div>
+
+                <div class="tab-content active" id="file-tab">
+                    <div class="drop-zone" id="dropZone">
+                        <div class="drop-zone-content">
+                            <i class="fas fa-cloud-upload-alt drop-icon"></i>
+                            <h3>Drag & Drop File Here</h3>
+                            <p>or click to browse</p>
+                            <input type="file" id="fileInput" hidden>
+                            <button class="btn btn-primary" onclick="document.getElementById('fileInput').click()">
+                                <i class="fas fa-folder-open"></i> Browse Files
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="file-selected" id="fileSelected" style="display: none;">
+                        <div class="file-info-box">
+                            <div class="file-icon">
+                                <i class="fas fa-file-alt"></i>
+                            </div>
+                            <div class="file-details">
+                                <h4 id="selectedFileName"></h4>
+                                <p id="selectedFileSize"></p>
+                            </div>
+                            <button class="btn-icon" onclick="clearFile()">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+
+                        <div class="os-selection">
+                            <h4><i class="fas fa-laptop"></i> Select Operating System</h4>
+                            <div class="os-options">
+                                <label class="os-option">
+                                    <input type="radio" name="os" value="windows10" checked>
+                                    <div class="os-card">
+                                        <i class="fab fa-windows"></i>
+                                        <span>Windows 10</span>
+                                        <small>Most Compatible</small>
+                                    </div>
+                                </label>
+                                <label class="os-option">
+                                    <input type="radio" name="os" value="windows7">
+                                    <div class="os-card">
+                                        <i class="fab fa-windows"></i>
+                                        <span>Windows 7</span>
+                                        <small>Legacy Apps</small>
+                                    </div>
+                                </label>
+                                <label class="os-option">
+                                    <input type="radio" name="os" value="ubuntu">
+                                    <div class="os-card">
+                                        <i class="fab fa-ubuntu"></i>
+                                        <span>Ubuntu</span>
+                                        <small>Linux Analysis</small>
+                                    </div>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="analysis-options">
+                            <label class="checkbox-option">
+                                <input type="checkbox" checked>
+                                <span>Enable network monitoring</span>
+                            </label>
+                            <label class="checkbox-option">
+                                <input type="checkbox" checked>
+                                <span>Record video</span>
+                            </label>
+                            <label class="checkbox-option">
+                                <input type="checkbox">
+                                <span>Extended analysis (5 min)</span>
+                            </label>
+                        </div>
+
+                        <button class="btn btn-success btn-lg" id="startAnalysisBtn">
+                            <i class="fas fa-play"></i> Start Analysis
+                        </button>
+                    </div>
+                </div>
+
+                <div class="tab-content" id="url-tab">
+                    <div class="url-input-group">
+                        <input type="url" class="modern-input" placeholder="https://example.com/file.exe">
+                        <button class="btn btn-primary">
+                            <i class="fas fa-download"></i> Fetch & Analyze
+                        </button>
+                    </div>
+                </div>
+
+                <div class="supported-formats-modern">
+                    <h4>Supported Formats</h4>
+                    <div class="format-list">
+                        <span class="format-tag"><i class="fas fa-file-code"></i> EXE</span>
+                        <span class="format-tag"><i class="fas fa-file-code"></i> DLL</span>
+                        <span class="format-tag"><i class="fas fa-file-pdf"></i> PDF</span>
+                        <span class="format-tag"><i class="fas fa-file-word"></i> DOCX</span>
+                        <span class="format-tag"><i class="fas fa-file-excel"></i> XLSX</span>
+                        <span class="format-tag"><i class="fas fa-file-archive"></i> ZIP</span>
+                        <span class="format-tag"><i class="fas fa-file-code"></i> JS</span>
+                        <span class="format-tag"><i class="fas fa-file-code"></i> Python</span>
+                        <span class="format-tag">+15 more</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="info-sidebar">
+                <div class="info-card">
+                    <i class="fas fa-info-circle"></i>
+                    <h3>How it works</h3>
+                    <ol>
+                        <li>Upload suspicious file</li>
+                        <li>File runs in isolated VM</li>
+                        <li>Monitor behavior in real-time</li>
+                        <li>Download detailed report</li>
+                    </ol>
+                </div>
+
+                <div class="info-card">
+                    <i class="fas fa-shield-alt"></i>
+                    <h3>Security</h3>
+                    <p>All files are executed in isolated KVM virtual machines with no internet access to your network.</p>
+                </div>
+
+                <div class="stats-card">
+                    <h3>Live Stats</h3>
+                    <div class="stat-item">
+                        <span>Active Sessions</span>
+                        <strong id="activeSessions">0</strong>
+                    </div>
+                    <div class="stat-item">
+                        <span>Total Analyzed</span>
+                        <strong id="totalAnalyzed">0</strong>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Recent Analysis -->
+    <section class="recent-section">
+        <div class="section-header">
+            <h2><i class="fas fa-clock"></i> Recent Analysis</h2>
+            <a href="/sessions" class="btn btn-outline">View All</a>
+        </div>
+        <div class="recent-grid" id="recentGrid">
+            <div class="loading-spinner">
+                <i class="fas fa-circle-notch fa-spin"></i>
+                <p>Loading recent sessions...</p>
+            </div>
+        </div>
+    </section>
+
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+    <script src="{{ url_for('static', filename='js/modern_main.js') }}"></script>
+</body>
+</html>
