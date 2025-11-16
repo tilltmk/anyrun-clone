@@ -1,22 +1,346 @@
 <!DOCTYPE html>
-<html lang="de">
+<html lang="de" data-theme="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}AnyRun Clone - Sandbox Analysis{% endblock %}</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: linear-gradient(135deg, #0d2439 0%, #082a41 100%);
+            min-height: 100vh;
+            color: #ffffff;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .navbar {
+            background: #082a41;
+            padding: 15px 0;
+            border-bottom: 1px solid #0f3654;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+        }
+
+        .navbar .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .nav-brand {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .nav-brand h1 {
+            font-size: 1.5em;
+            color: #00baf5;
+            font-weight: 700;
+            margin: 0;
+        }
+
+        .nav-brand i {
+            font-size: 1.5em;
+            color: #00baf5;
+        }
+
+        .beta-badge {
+            background: #10b981;
+            color: white;
+            font-size: 0.6em;
+            padding: 3px 8px;
+            border-radius: 10px;
+            font-weight: 600;
+            margin-left: 8px;
+        }
+
+        .nav-menu {
+            list-style: none;
+            display: flex;
+            gap: 10px;
+            margin: 0;
+            padding: 0;
+        }
+
+        .nav-menu li a {
+            color: #cbd5e1;
+            text-decoration: none;
+            padding: 10px 16px;
+            border-radius: 6px;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 500;
+        }
+
+        .nav-menu li a:hover {
+            background: #0a2d47;
+            color: #00baf5;
+        }
+
+        .nav-menu li a.active {
+            background: #00baf5;
+            color: #0d2439;
+        }
+
+        .main-content {
+            flex: 1;
+            padding: 30px 0;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        .footer {
+            background: #052440;
+            padding: 20px 0;
+            text-align: center;
+            border-top: 1px solid #0f3654;
+            margin-top: auto;
+        }
+
+        .footer p {
+            color: #7b8795;
+            margin: 0;
+            font-size: 0.9em;
+        }
+
+        /* Common Components */
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: #00baf5;
+            color: #0d2439;
+        }
+
+        .btn-primary:hover {
+            background: #42d2ff;
+            transform: translateY(-2px);
+        }
+
+        .btn-success {
+            background: #10b981;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #059669;
+        }
+
+        .btn-danger {
+            background: #f58580;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #ef4444;
+        }
+
+        .btn-secondary {
+            background: #3b4d62;
+            color: #fff;
+        }
+
+        .btn-secondary:hover {
+            background: #4a5e75;
+        }
+
+        .btn-small {
+            padding: 6px 12px;
+            font-size: 0.85em;
+        }
+
+        .btn-outline {
+            background: transparent;
+            border: 1px solid #00baf5;
+            color: #00baf5;
+        }
+
+        .btn-outline:hover {
+            background: #00baf5;
+            color: #0d2439;
+        }
+
+        .page-header {
+            margin-bottom: 30px;
+        }
+
+        .page-header h2 {
+            color: #00baf5;
+            font-size: 2em;
+            margin-bottom: 10px;
+        }
+
+        .page-header p {
+            color: #cbd5e1;
+            font-size: 1.1em;
+        }
+
+        .card {
+            background: #0a2d47;
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+            border: 1px solid #0f3654;
+        }
+
+        .status-badge {
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            font-weight: 600;
+            display: inline-block;
+        }
+
+        .status-pending {
+            background: #3b4d62;
+            color: #cbd5e1;
+        }
+
+        .status-analyzing {
+            background: #f59e0b;
+            color: white;
+        }
+
+        .status-completed {
+            background: #10b981;
+            color: white;
+        }
+
+        .status-error {
+            background: #f58580;
+            color: white;
+        }
+
+        .status-running {
+            background: #00baf5;
+            color: #0d2439;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        table th {
+            background: #052440;
+            color: #00baf5;
+            padding: 12px;
+            text-align: left;
+            font-weight: 600;
+            border-bottom: 2px solid #0f3654;
+        }
+
+        table td {
+            padding: 12px;
+            border-bottom: 1px solid #0f3654;
+            color: #cbd5e1;
+        }
+
+        table tr:hover {
+            background: #0a2d47;
+        }
+
+        code {
+            background: #052440;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+            color: #00baf5;
+        }
+
+        .alert {
+            padding: 15px 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border: 1px solid;
+        }
+
+        .alert-info {
+            background: #052440;
+            border-color: #00baf5;
+            color: #cbd5e1;
+        }
+
+        .alert-success {
+            background: #052440;
+            border-color: #10b981;
+            color: #10b981;
+        }
+
+        .alert-error {
+            background: #052440;
+            border-color: #f58580;
+            color: #f58580;
+        }
+
+        .alert-warning {
+            background: #052440;
+            border-color: #f59e0b;
+            color: #f59e0b;
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #0d2439;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #0f3654;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #1a4668;
+        }
+    </style>
     {% block extra_css %}{% endblock %}
 </head>
 <body>
     <nav class="navbar">
         <div class="container">
             <div class="nav-brand">
-                <h1>🔒 AnyRun Clone</h1>
+                <i class="fas fa-shield-virus"></i>
+                <h1>AnyRun Clone</h1>
+                <span class="beta-badge">PRO</span>
             </div>
             <ul class="nav-menu">
-                <li><a href="{{ url_for('index') }}">Upload</a></li>
-                <li><a href="{{ url_for('list_sessions') }}">Sessions</a></li>
-                <li><a href="{{ url_for('dashboard') }}">Dashboard</a></li>
+                <li><a href="{{ url_for('index') }}"><i class="fas fa-upload"></i> Upload</a></li>
+                <li><a href="{{ url_for('list_sessions') }}"><i class="fas fa-history"></i> Sessions</a></li>
+                <li><a href="{{ url_for('dashboard') }}"><i class="fas fa-chart-line"></i> Dashboard</a></li>
             </ul>
         </div>
     </nav>
@@ -27,7 +351,7 @@
 
     <footer class="footer">
         <div class="container">
-            <p>&copy; 2025 AnyRun Clone - Educational Purpose Only</p>
+            <p><i class="fas fa-lock"></i> 2025 AnyRun Clone - Educational Purpose Only</p>
         </div>
     </footer>
 

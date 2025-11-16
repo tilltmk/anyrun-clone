@@ -2,40 +2,250 @@
 
 {% block title %}Upload File - AnyRun Clone{% endblock %}
 
+{% block extra_css %}
+<style>
+    .hero {
+        text-align: center;
+        padding: 40px 0;
+        margin-bottom: 30px;
+    }
+
+    .hero h2 {
+        font-size: 2.5em;
+        color: #00baf5;
+        margin-bottom: 15px;
+    }
+
+    .hero p {
+        color: #cbd5e1;
+        font-size: 1.2em;
+    }
+
+    .upload-section {
+        display: flex;
+        justify-content: center;
+        margin-bottom: 40px;
+    }
+
+    .upload-card {
+        background: #0a2d47;
+        border-radius: 12px;
+        padding: 35px;
+        width: 100%;
+        max-width: 700px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+        border: 1px solid #0f3654;
+    }
+
+    .upload-card h3 {
+        color: #00baf5;
+        margin-bottom: 25px;
+        font-size: 1.5em;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .upload-area {
+        border: 2px dashed #0f3654;
+        border-radius: 10px;
+        padding: 50px 30px;
+        text-align: center;
+        transition: all 0.3s;
+        background: #052440;
+        margin-bottom: 20px;
+    }
+
+    .upload-area:hover {
+        border-color: #00baf5;
+        background: #082a41;
+    }
+
+    .upload-area.drag-over {
+        border-color: #10b981;
+        background: #0a2d47;
+    }
+
+    .upload-icon {
+        font-size: 64px;
+        color: #00baf5;
+        margin-bottom: 20px;
+    }
+
+    .upload-area p {
+        color: #cbd5e1;
+        margin-bottom: 20px;
+        font-size: 1.1em;
+    }
+
+    .file-info {
+        background: #052440;
+        padding: 20px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+        border: 1px solid #0f3654;
+    }
+
+    .file-info h4 {
+        color: #00baf5;
+        margin-bottom: 10px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .file-info p {
+        color: #cbd5e1;
+        margin-bottom: 15px;
+        font-family: monospace;
+    }
+
+    .file-info .btn {
+        margin-right: 10px;
+    }
+
+    .upload-progress {
+        background: #052440;
+        padding: 20px;
+        border-radius: 8px;
+        border: 1px solid #0f3654;
+    }
+
+    .progress-bar {
+        height: 10px;
+        background: #0d2439;
+        border-radius: 5px;
+        overflow: hidden;
+        margin-bottom: 10px;
+    }
+
+    .progress-fill {
+        height: 100%;
+        background: linear-gradient(90deg, #00baf5, #42d2ff);
+        border-radius: 5px;
+        transition: width 0.3s;
+        width: 0%;
+    }
+
+    .upload-progress p {
+        color: #cbd5e1;
+        text-align: center;
+    }
+
+    .supported-formats {
+        margin-top: 25px;
+        padding-top: 25px;
+        border-top: 1px solid #0f3654;
+    }
+
+    .supported-formats h4 {
+        color: #cbd5e1;
+        margin-bottom: 15px;
+        font-size: 1em;
+    }
+
+    .format-tags {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+
+    .tag {
+        background: #052440;
+        color: #00baf5;
+        padding: 6px 12px;
+        border-radius: 20px;
+        font-size: 0.85em;
+        font-weight: 600;
+        border: 1px solid #0f3654;
+    }
+
+    .features {
+        margin-top: 50px;
+    }
+
+    .features h3 {
+        color: #00baf5;
+        font-size: 1.8em;
+        margin-bottom: 30px;
+        text-align: center;
+    }
+
+    .feature-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 25px;
+    }
+
+    .feature-card {
+        background: #0a2d47;
+        padding: 30px;
+        border-radius: 12px;
+        text-align: center;
+        transition: all 0.3s;
+        border: 1px solid #0f3654;
+    }
+
+    .feature-card:hover {
+        transform: translateY(-5px);
+        border-color: #00baf5;
+    }
+
+    .feature-icon {
+        font-size: 48px;
+        color: #00baf5;
+        margin-bottom: 20px;
+    }
+
+    .feature-card h4 {
+        color: #fff;
+        margin-bottom: 12px;
+        font-size: 1.2em;
+    }
+
+    .feature-card p {
+        color: #7b8795;
+        font-size: 0.95em;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="container">
     <div class="hero">
-        <h2>Interactive Malware Analysis Sandbox</h2>
+        <h2><i class="fas fa-shield-alt"></i> Interactive Malware Analysis Sandbox</h2>
         <p>Upload a file to analyze its behavior in a secure sandbox environment</p>
     </div>
 
     <div class="upload-section">
         <div class="upload-card">
-            <h3>Upload File for Analysis</h3>
+            <h3><i class="fas fa-cloud-upload-alt"></i> Upload File for Analysis</h3>
 
             <div class="upload-area" id="uploadArea">
-                <div class="upload-icon">📁</div>
+                <div class="upload-icon"><i class="fas fa-folder-open"></i></div>
                 <p>Drag & drop file here or click to browse</p>
                 <input type="file" id="fileInput" accept=".exe,.dll,.pdf,.docx,.xlsx,.zip,.rar,.js,.vbs,.bat,.ps1,.py,.jar,.apk" style="display: none;">
-                <button class="btn btn-primary" onclick="document.getElementById('fileInput').click()">Select File</button>
+                <button class="btn btn-primary" onclick="document.getElementById('fileInput').click()">
+                    <i class="fas fa-file-upload"></i> Select File
+                </button>
             </div>
 
             <div class="file-info" id="fileInfo" style="display: none;">
-                <h4>Selected File:</h4>
+                <h4><i class="fas fa-file-alt"></i> Selected File:</h4>
                 <p id="fileName"></p>
-                <button class="btn btn-success" id="uploadBtn">Start Analysis</button>
-                <button class="btn btn-secondary" id="cancelBtn">Cancel</button>
+                <button class="btn btn-success" id="uploadBtn"><i class="fas fa-play"></i> Start Analysis</button>
+                <button class="btn btn-secondary" id="cancelBtn"><i class="fas fa-times"></i> Cancel</button>
             </div>
 
             <div class="upload-progress" id="uploadProgress" style="display: none;">
                 <div class="progress-bar">
                     <div class="progress-fill" id="progressFill"></div>
                 </div>
-                <p id="progressText">Uploading...</p>
+                <p id="progressText"><i class="fas fa-spinner fa-spin"></i> Uploading...</p>
             </div>
 
             <div class="supported-formats">
-                <h4>Supported File Types:</h4>
+                <h4><i class="fas fa-file-code"></i> Supported File Types:</h4>
                 <div class="format-tags">
                     <span class="tag">EXE</span>
                     <span class="tag">DLL</span>
@@ -52,25 +262,25 @@
     </div>
 
     <div class="features">
-        <h3>Features</h3>
+        <h3><i class="fas fa-star"></i> Features</h3>
         <div class="feature-grid">
             <div class="feature-card">
-                <div class="feature-icon">🔍</div>
+                <div class="feature-icon"><i class="fas fa-search"></i></div>
                 <h4>Behavioral Analysis</h4>
                 <p>Monitor file system, registry, and process activities</p>
             </div>
             <div class="feature-card">
-                <div class="feature-icon">🌐</div>
+                <div class="feature-icon"><i class="fas fa-network-wired"></i></div>
                 <h4>Network Monitoring</h4>
                 <p>Track DNS queries, HTTP requests, and TCP connections</p>
             </div>
             <div class="feature-card">
-                <div class="feature-icon">📊</div>
+                <div class="feature-icon"><i class="fas fa-chart-bar"></i></div>
                 <h4>Threat Scoring</h4>
                 <p>Automatic threat assessment based on observed behavior</p>
             </div>
             <div class="feature-card">
-                <div class="feature-icon">⏱️</div>
+                <div class="feature-icon"><i class="fas fa-bolt"></i></div>
                 <h4>Real-time Results</h4>
                 <p>View analysis results as they happen</p>
             </div>
@@ -139,7 +349,7 @@ uploadBtn.addEventListener('click', async () => {
 
     fileInfo.style.display = 'none';
     uploadProgress.style.display = 'block';
-    progressText.textContent = 'Uploading...';
+    progressText.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Uploading...';
 
     try {
         const response = await fetch('/upload', {
@@ -151,7 +361,7 @@ uploadBtn.addEventListener('click', async () => {
 
         if (data.success) {
             progressFill.style.width = '100%';
-            progressText.textContent = 'Upload complete! Redirecting...';
+            progressText.innerHTML = '<i class="fas fa-check"></i> Upload complete! Redirecting...';
 
             setTimeout(() => {
                 window.location.href = `/session/${data.session_id}`;
