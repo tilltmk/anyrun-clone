@@ -559,6 +559,45 @@ def skip_setup():
     return jsonify({'success': True, 'message': 'Setup skipped. Static analysis only.'})
 
 
+@app.route('/api/setup/reset', methods=['POST'])
+def reset_setup():
+    """Reset setup to allow reconfiguration"""
+    setup_manager.config['setup_complete'] = False
+    setup_manager.config['static_only'] = False
+    setup_manager._save_config()
+    return jsonify({'success': True, 'message': 'Setup reset. Please reconfigure.'})
+
+
+@app.route('/api/setup/validate-iso', methods=['POST'])
+def validate_iso():
+    """Validate that an ISO file exists and is readable"""
+    data = request.get_json()
+    iso_path = data.get('iso_path', '')
+
+    if not iso_path:
+        return jsonify({'valid': False, 'error': 'No path provided'})
+
+    if not os.path.exists(iso_path):
+        return jsonify({'valid': False, 'error': 'File does not exist'})
+
+    if not iso_path.lower().endswith('.iso'):
+        return jsonify({'valid': False, 'error': 'File is not an ISO'})
+
+    if not os.access(iso_path, os.R_OK):
+        return jsonify({'valid': False, 'error': 'File is not readable'})
+
+    size = os.path.getsize(iso_path)
+    if size < 100 * 1024 * 1024:  # Less than 100MB
+        return jsonify({'valid': False, 'error': 'File is too small for an OS ISO'})
+
+    return jsonify({
+        'valid': True,
+        'name': os.path.basename(iso_path),
+        'size': size,
+        'size_human': f"{size / (1024*1024*1024):.2f} GB"
+    })
+
+
 @app.errorhandler(404)
 def not_found(e):
     return render_template('404.html'), 404
