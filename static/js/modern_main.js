@@ -111,9 +111,14 @@ async function startAnalysis() {
     formData.append('os_type', state.selectedOS);
 
     // Get analysis options
-    const networkMonitoring = document.getElementById('networkMonitoring').checked;
-    const recordVideo = document.getElementById('recordVideo').checked;
-    const extendedAnalysis = document.getElementById('extendedAnalysis').checked;
+    const networkMonitoring = document.getElementById('networkMonitoring')?.checked || false;
+    const recordVideo = document.getElementById('recordVideo')?.checked || false;
+    const extendedAnalysis = document.getElementById('extendedAnalysis')?.checked || false;
+
+    // Determine analysis type: static or dynamic
+    // Dynamic analysis requires VM (when network monitoring or video recording is enabled)
+    const analysisType = (networkMonitoring || recordVideo) ? 'dynamic' : 'static';
+    formData.append('analysis_type', analysisType);
 
     formData.append('network_monitoring', networkMonitoring);
     formData.append('record_video', recordVideo);
@@ -122,7 +127,7 @@ async function startAnalysis() {
     // Show loading
     const startBtn = document.getElementById('startAnalysisBtn');
     const originalText = startBtn.innerHTML;
-    startBtn.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Starting Analysis...';
+    startBtn.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Starting REAL Analysis...';
     startBtn.disabled = true;
 
     try {
@@ -134,7 +139,8 @@ async function startAnalysis() {
         const data = await response.json();
 
         if (data.success) {
-            showNotification('Analysis started successfully!', 'success');
+            const typeMsg = data.analysis_type === 'dynamic' ? 'Dynamic VM' : 'Static';
+            showNotification(`${typeMsg} analysis started - NO FAKE DATA!`, 'success');
 
             // Redirect to session view
             setTimeout(() => {
@@ -433,9 +439,11 @@ setInterval(() => {
 }, 60000);
 
 // Log for debugging
-console.log('%c🔒 AnyRun Clone v3.0', 'color: #667eea; font-size: 20px; font-weight: bold;');
-console.log('%cFull-Featured Malware Analysis Platform', 'color: #764ba2; font-size: 14px;');
+console.log('%cAnyRun Clone v4.0 - REAL Analysis', 'color: #00d4ff; font-size: 20px; font-weight: bold;');
+console.log('%cNO FAKE DATA - All analysis is REAL', 'color: #ff4444; font-size: 14px; font-weight: bold;');
 console.log('%c━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━', 'color: #3b82f6;');
-console.log('WebSocket:', socket.connected ? '✅ Connected' : '❌ Disconnected');
+console.log('WebSocket:', socket.connected ? 'Connected' : 'Disconnected');
 console.log('Theme:', state.currentTheme);
+console.log('Static Analysis: File strings, YARA rules, PE analysis');
+console.log('Dynamic Analysis: Full KVM VM execution with real monitoring');
 console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');

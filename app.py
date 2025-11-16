@@ -11,12 +11,12 @@ from models import (
     DroppedFile, IOC, MitreAttack, StringAnalysis, MutexHandle,
     MemoryRegion, Screenshot, YaraMatch, Certificate
 )
-from advanced_analyzer import AdvancedAnalyzer
+from real_analyzer import RealAnalyzer
 from vm_manager import VMManager
-from network_monitor import NetworkMonitor
+from vnc_proxy import VNCWebSocketProxy
 
 app = Flask(__name__)
-app.config['SECRET_KEY'] = 'dev-secret-key-change-in-production'
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'change-this-in-production')
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///anyrun.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['UPLOAD_FOLDER'] = 'uploads'
@@ -40,9 +40,10 @@ db.init_app(app)
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 os.makedirs(app.config['RESULTS_FOLDER'], exist_ok=True)
 
-# Initialize components
-analyzer = AdvancedAnalyzer()
+# Initialize components - REAL analyzer, no fake data
+analyzer = None  # Will be initialized after socketio
 vm_manager = VMManager()
+vnc_proxy = VNCWebSocketProxy()
 active_sessions = {}  # Track active analysis sessions
 
 
@@ -51,10 +52,22 @@ def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 
-def analyze_in_background(filepath, filename, session_id):
-    """Run analysis in background thread"""
+def analyze_in_background(filepath, filename, session_id, analysis_type='static', os_type='windows10'):
+    """Run REAL analysis in background thread - NO FAKE DATA"""
+    global analyzer
     with app.app_context():
-        analyzer.analyze_file(filepath, filename, session_id)
+        if analyzer is None:
+            analyzer = RealAnalyzer(socketio=socketio)
+
+        if analysis_type == 'dynamic':
+            # Full dynamic analysis with KVM VM
+            result = analyzer.analyze_file_dynamic(filepath, filename, session_id, os_type=os_type)
+        else:
+            # Static analysis only (no VM execution)
+            result = analyzer.analyze_file_static(filepath, filename, session_id)
+
+        # Store result in active sessions
+        active_sessions[session_id] = result
 
 
 @app.route('/')
@@ -65,7 +78,7 @@ def index():
 
 @app.route('/upload', methods=['POST'])
 def upload_file():
-    """Handle file upload and start analysis"""
+    """Handle file upload and start REAL analysis - NO FAKE DATA"""
     if 'file' not in request.files:
         return jsonify({'error': 'No file provided'}), 400
 
@@ -81,32 +94,63 @@ def upload_file():
         # Generate unique session ID
         session_id = str(uuid.uuid4())
 
+        # Get analysis options from request
+        analysis_type = request.form.get('analysis_type', 'static')  # 'static' or 'dynamic'
+        os_type = request.form.get('os_type', 'windows10')  # OS for dynamic analysis
+
         # Save uploaded file
         filename = secure_filename(file.filename)
         filepath = os.path.join(app.config['UPLOAD_FOLDER'], f"{session_id}_{filename}")
         file.save(filepath)
 
-        # Start analysis in background
+        # Create results directory for this session
+        os.makedirs(os.path.join(app.config['RESULTS_FOLDER'], session_id), exist_ok=True)
+
+        # Start REAL analysis in background - NO FAKE DATA
         thread = threading.Thread(
             target=analyze_in_background,
-            args=(filepath, filename, session_id)
+            args=(filepath, filename, session_id, analysis_type, os_type)
         )
         thread.daemon = True
         thread.start()
 
-        return jsonify({
+        response_data = {
             'success': True,
             'session_id': session_id,
-            'message': 'File uploaded successfully. Analysis started.'
-        })
+            'analysis_type': analysis_type,
+            'message': f'File uploaded. Starting {analysis_type} analysis.'
+        }
+
+        # If dynamic analysis, start VNC proxy for KVM stream
+        if analysis_type == 'dynamic':
+            vnc_port = vm_manager.vm_configs.get(os_type, {}).get('vnc_port', 5900)
+            proxy_result = vnc_proxy.start_proxy(session_id, vnc_port=vnc_port)
+            if proxy_result['success']:
+                response_data['vnc_ws_url'] = proxy_result['ws_url']
+                response_data['vnc_ws_port'] = proxy_result['ws_port']
+
+        return jsonify(response_data)
 
     except Exception as e:
+        import traceback
+        traceback.print_exc()
         return jsonify({'error': str(e)}), 500
 
 
 @app.route('/session/<session_id>')
 def view_session(session_id):
-    """View analysis session details"""
+    """View analysis session details - REAL DATA"""
+    session = AnalysisSession.query.filter_by(session_id=session_id).first()
+    if not session:
+        return "Session not found", 404
+
+    # Use live interface for better any.run-style experience
+    return render_template('session_live.html', session_id=session_id)
+
+
+@app.route('/session/<session_id>/advanced')
+def view_session_advanced(session_id):
+    """View advanced session details"""
     session = AnalysisSession.query.filter_by(session_id=session_id).first()
     if not session:
         return "Session not found", 404
@@ -116,7 +160,11 @@ def view_session(session_id):
 
 @app.route('/api/session/<session_id>')
 def get_session_data(session_id):
-    """API endpoint to get session data"""
+    """API endpoint to get REAL session data - NO FAKE DATA"""
+    global analyzer
+    if analyzer is None:
+        analyzer = RealAnalyzer(socketio=socketio)
+
     details = analyzer.get_session_details(session_id)
     if not details:
         return jsonify({'error': 'Session not found'}), 404
@@ -382,6 +430,29 @@ def search_sessions():
     return jsonify([s.to_dict() for s in sessions])
 
 
+@app.route('/api/session/<session_id>/vnc')
+def get_vnc_info(session_id):
+    """Get VNC connection info for KVM stream"""
+    proxy_info = vnc_proxy.get_proxy_info(session_id)
+    if proxy_info:
+        return jsonify({
+            'success': True,
+            'ws_port': proxy_info['ws_port'],
+            'ws_url': f'ws://localhost:{proxy_info["ws_port"]}'
+        })
+    return jsonify({'success': False, 'error': 'No active VM for this session'}), 404
+
+
+@app.route('/api/vm/status/<session_id>')
+def get_vm_status(session_id):
+    """Get VM status for a session"""
+    # Find VM by session ID
+    for vm in vm_manager.list_vms():
+        if session_id in vm.get('name', ''):
+            return jsonify(vm_manager.get_vm_status(vm['name']))
+    return jsonify({'status': 'not_found'})
+
+
 @app.errorhandler(404)
 def not_found(e):
     return render_template('404.html'), 404
@@ -448,16 +519,25 @@ if __name__ == '__main__':
     with app.app_context():
         db.create_all()
 
+    # Initialize analyzer with socketio
+    analyzer = RealAnalyzer(socketio=socketio)
+
     print("=" * 70)
-    print("🔒  AnyRun Clone v3.0 - Full-Featured KVM Edition")
+    print("  AnyRun Clone v4.0 - REAL Analysis Edition")
+    print("  NO FAKE DATA - All analysis is performed on actual files")
     print("=" * 70)
     print("Features:")
-    print("  ✓ Real KVM/QEMU Virtual Machines")
-    print("  ✓ WebSocket Real-time Updates")
-    print("  ✓ Network Traffic Capture with Scapy")
-    print("  ✓ Interactive VM Control (VNC)")
-    print("  ✓ Video Recording")
-    print("  ✓ Modern Dark Theme UI")
+    print("  - Real KVM/QEMU Virtual Machines")
+    print("  - Real YARA Rule Scanning")
+    print("  - Real String Extraction & Analysis")
+    print("  - Real Network Traffic Capture")
+    print("  - Real PE File Analysis")
+    print("  - VNC WebSocket Proxy for Live VM Stream")
+    print("  - WebSocket Real-time Updates")
+    print("=" * 70)
+    print("IMPORTANT: This version performs REAL analysis.")
+    print("  Static Analysis: Analyzes file without execution")
+    print("  Dynamic Analysis: Executes file in isolated KVM VM")
     print("=" * 70)
     print("Server starting on http://localhost:5000")
     print("WebSocket enabled on ws://localhost:5000")

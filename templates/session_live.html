@@ -1,0 +1,850 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Live Analysis - {{ session_id }}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/modern_style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* Any.run-style unified layout */
+        .analysis-container {
+            display: grid;
+            grid-template-columns: 1fr 350px;
+            grid-template-rows: auto 1fr;
+            gap: 0;
+            height: calc(100vh - 60px);
+            background: #0a0a0f;
+        }
+
+        .main-viewer {
+            grid-column: 1;
+            grid-row: 1 / -1;
+            background: #000;
+            position: relative;
+            border-right: 1px solid #1a1a2e;
+        }
+
+        .vnc-container {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #000;
+        }
+
+        .vnc-canvas {
+            max-width: 100%;
+            max-height: 100%;
+            border: 1px solid #333;
+        }
+
+        .vnc-placeholder {
+            text-align: center;
+            color: #666;
+            padding: 40px;
+        }
+
+        .vnc-placeholder i {
+            font-size: 64px;
+            margin-bottom: 20px;
+            color: #00d4ff;
+        }
+
+        .viewer-controls {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            z-index: 100;
+            display: flex;
+            gap: 8px;
+        }
+
+        .control-btn {
+            background: rgba(0, 0, 0, 0.8);
+            border: 1px solid #333;
+            color: #fff;
+            padding: 8px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.2s;
+        }
+
+        .control-btn:hover {
+            background: #00d4ff;
+            border-color: #00d4ff;
+        }
+
+        .control-btn.active {
+            background: #00d4ff;
+            color: #000;
+        }
+
+        .sidebar {
+            grid-column: 2;
+            grid-row: 1 / -1;
+            background: #0d0d14;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .session-info {
+            padding: 15px;
+            background: #13131f;
+            border-bottom: 1px solid #1a1a2e;
+        }
+
+        .session-info h3 {
+            margin: 0 0 10px 0;
+            color: #00d4ff;
+            font-size: 14px;
+        }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+        }
+
+        .info-item {
+            background: #1a1a2e;
+            padding: 8px;
+            border-radius: 4px;
+        }
+
+        .info-label {
+            font-size: 10px;
+            color: #666;
+            text-transform: uppercase;
+            margin-bottom: 4px;
+        }
+
+        .info-value {
+            font-size: 12px;
+            color: #fff;
+            font-weight: 500;
+        }
+
+        .threat-indicator {
+            grid-column: 1 / -1;
+            background: linear-gradient(135deg, #1a1a2e 0%, #0d0d14 100%);
+            padding: 12px;
+            border-radius: 6px;
+            text-align: center;
+        }
+
+        .threat-score {
+            font-size: 32px;
+            font-weight: bold;
+            margin: 5px 0;
+        }
+
+        .threat-low { color: #4caf50; }
+        .threat-medium { color: #ff9800; }
+        .threat-high { color: #f44336; }
+        .threat-critical { color: #9c27b0; }
+
+        .tabs-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .tab-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            background: #13131f;
+            padding: 8px;
+            gap: 4px;
+            border-bottom: 1px solid #1a1a2e;
+        }
+
+        .tab-btn {
+            padding: 6px 10px;
+            background: transparent;
+            border: none;
+            color: #888;
+            cursor: pointer;
+            font-size: 11px;
+            border-radius: 4px;
+            transition: all 0.2s;
+        }
+
+        .tab-btn:hover {
+            color: #fff;
+            background: #1a1a2e;
+        }
+
+        .tab-btn.active {
+            background: #00d4ff;
+            color: #000;
+            font-weight: 600;
+        }
+
+        .tab-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 10px;
+        }
+
+        .event-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .event-item {
+            background: #1a1a2e;
+            padding: 10px;
+            border-radius: 4px;
+            border-left: 3px solid #333;
+            font-size: 12px;
+        }
+
+        .event-item.severity-critical {
+            border-left-color: #9c27b0;
+        }
+
+        .event-item.severity-high {
+            border-left-color: #f44336;
+        }
+
+        .event-item.severity-medium {
+            border-left-color: #ff9800;
+        }
+
+        .event-item.severity-low {
+            border-left-color: #4caf50;
+        }
+
+        .event-time {
+            font-size: 10px;
+            color: #666;
+            margin-bottom: 4px;
+        }
+
+        .event-desc {
+            color: #fff;
+            word-break: break-all;
+        }
+
+        .event-type {
+            display: inline-block;
+            background: #2a2a3e;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 10px;
+            margin-top: 4px;
+            color: #00d4ff;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 30px;
+            color: #666;
+        }
+
+        .empty-state i {
+            font-size: 32px;
+            margin-bottom: 10px;
+        }
+
+        .status-bar {
+            background: #13131f;
+            padding: 10px 15px;
+            border-top: 1px solid #1a1a2e;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 11px;
+        }
+
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #666;
+        }
+
+        .status-dot.analyzing {
+            background: #ff9800;
+            animation: pulse 1.5s infinite;
+        }
+
+        .status-dot.running {
+            background: #4caf50;
+            animation: pulse 1.5s infinite;
+        }
+
+        .status-dot.completed {
+            background: #00d4ff;
+        }
+
+        .status-dot.error {
+            background: #f44336;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .nav-bar {
+            background: #0d0d14;
+            padding: 10px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #1a1a2e;
+        }
+
+        .nav-brand {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: #00d4ff;
+            font-weight: bold;
+            font-size: 16px;
+        }
+
+        .nav-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn-sm {
+            padding: 6px 12px;
+            background: #1a1a2e;
+            border: 1px solid #333;
+            color: #fff;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            text-decoration: none;
+            transition: all 0.2s;
+        }
+
+        .btn-sm:hover {
+            background: #00d4ff;
+            border-color: #00d4ff;
+            color: #000;
+        }
+
+        .btn-primary {
+            background: #00d4ff;
+            color: #000;
+            border-color: #00d4ff;
+        }
+
+        /* Scrollbar styling */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #0a0a0f;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #333;
+            border-radius: 3px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #444;
+        }
+    </style>
+</head>
+<body>
+    <nav class="nav-bar">
+        <div class="nav-brand">
+            <i class="fas fa-shield-virus"></i>
+            <span>AnyRun Clone - Live Analysis</span>
+        </div>
+        <div class="nav-actions">
+            <a href="/" class="btn-sm"><i class="fas fa-home"></i> Home</a>
+            <a href="/sessions" class="btn-sm"><i class="fas fa-list"></i> Sessions</a>
+            <a href="/api/session/{{ session_id }}/export/json" class="btn-sm" download><i class="fas fa-download"></i> Export JSON</a>
+            <a href="/session/{{ session_id }}/report" class="btn-sm btn-primary"><i class="fas fa-file-alt"></i> Full Report</a>
+        </div>
+    </nav>
+
+    <div class="analysis-container">
+        <!-- Main Viewer (KVM Stream) -->
+        <div class="main-viewer">
+            <div class="viewer-controls">
+                <button class="control-btn" id="fullscreenBtn" title="Fullscreen">
+                    <i class="fas fa-expand"></i>
+                </button>
+                <button class="control-btn" id="screenshotBtn" title="Capture Screenshot">
+                    <i class="fas fa-camera"></i>
+                </button>
+                <button class="control-btn" id="refreshBtn" title="Refresh Connection">
+                    <i class="fas fa-sync"></i>
+                </button>
+            </div>
+
+            <div class="vnc-container" id="vncContainer">
+                <div class="vnc-placeholder" id="vncPlaceholder">
+                    <i class="fas fa-desktop"></i>
+                    <h3>KVM Virtual Machine Stream</h3>
+                    <p id="vncStatus">Connecting to VM...</p>
+                    <p style="font-size: 12px; color: #888;">
+                        Real-time view of malware execution in isolated sandbox
+                    </p>
+                </div>
+                <canvas id="vncCanvas" class="vnc-canvas" style="display: none;"></canvas>
+            </div>
+        </div>
+
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <!-- Session Info -->
+            <div class="session-info">
+                <h3><i class="fas fa-info-circle"></i> Session Info</h3>
+                <div class="info-grid">
+                    <div class="info-item">
+                        <div class="info-label">File</div>
+                        <div class="info-value" id="fileName">Loading...</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Type</div>
+                        <div class="info-value" id="fileType">-</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Size</div>
+                        <div class="info-value" id="fileSize">-</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Analysis</div>
+                        <div class="info-value" id="analysisType">-</div>
+                    </div>
+                    <div class="threat-indicator">
+                        <div class="info-label">Threat Score</div>
+                        <div class="threat-score" id="threatScore">-</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tabs -->
+            <div class="tabs-container">
+                <div class="tab-buttons">
+                    <button class="tab-btn active" data-tab="behaviors">Behaviors</button>
+                    <button class="tab-btn" data-tab="network">Network</button>
+                    <button class="tab-btn" data-tab="processes">Processes</button>
+                    <button class="tab-btn" data-tab="iocs">IOCs</button>
+                    <button class="tab-btn" data-tab="strings">Strings</button>
+                    <button class="tab-btn" data-tab="yara">YARA</button>
+                </div>
+
+                <div class="tab-content" id="tabContent">
+                    <div class="empty-state">
+                        <i class="fas fa-hourglass-half"></i>
+                        <p>Waiting for analysis data...</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Status Bar -->
+            <div class="status-bar">
+                <div class="status-indicator">
+                    <div class="status-dot" id="statusDot"></div>
+                    <span id="statusText">Initializing...</span>
+                </div>
+                <span id="elapsedTime">00:00</span>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+    <script>
+        const sessionId = '{{ session_id }}';
+        let socket = null;
+        let currentTab = 'behaviors';
+        let analysisData = {};
+        let startTime = Date.now();
+        let elapsedInterval = null;
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            initSocket();
+            initTabs();
+            loadSessionData();
+            startElapsedTimer();
+            checkVNCConnection();
+        });
+
+        function initSocket() {
+            socket = io();
+
+            socket.on('connect', () => {
+                console.log('WebSocket connected');
+                socket.emit('join_session', { session_id: sessionId });
+            });
+
+            socket.on('session_update', (data) => {
+                console.log('Session update:', data);
+                handleSessionUpdate(data);
+            });
+
+            socket.on('disconnect', () => {
+                console.log('WebSocket disconnected');
+            });
+        }
+
+        function handleSessionUpdate(update) {
+            if (update.session_id !== sessionId) return;
+
+            switch (update.event_type) {
+                case 'status':
+                    updateStatus(update.data.status);
+                    break;
+                case 'screenshot':
+                    // New screenshot available
+                    loadSessionData();
+                    break;
+                case 'vm_started':
+                    document.getElementById('vncStatus').textContent = 'VM Started. Connecting to display...';
+                    checkVNCConnection();
+                    break;
+                case 'vm_stats':
+                    // Update VM stats if needed
+                    break;
+                default:
+                    // Refresh data for any other updates
+                    loadSessionData();
+            }
+        }
+
+        function initTabs() {
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    currentTab = btn.dataset.tab;
+                    renderTabContent();
+                });
+            });
+        }
+
+        async function loadSessionData() {
+            try {
+                const response = await fetch(`/api/session/${sessionId}`);
+                const data = await response.json();
+
+                if (data.error) {
+                    console.error('Session error:', data.error);
+                    return;
+                }
+
+                analysisData = data;
+                updateSessionInfo(data);
+                updateThreatScore(data.threat_score);
+                updateStatus(data.session.status);
+                renderTabContent();
+
+            } catch (error) {
+                console.error('Error loading session data:', error);
+            }
+        }
+
+        function updateSessionInfo(data) {
+            document.getElementById('fileName').textContent = data.session.filename || '-';
+            document.getElementById('fileType').textContent = data.session.file_type || '-';
+
+            const size = data.session.file_size;
+            if (size) {
+                if (size > 1048576) {
+                    document.getElementById('fileSize').textContent = (size / 1048576).toFixed(2) + ' MB';
+                } else if (size > 1024) {
+                    document.getElementById('fileSize').textContent = (size / 1024).toFixed(2) + ' KB';
+                } else {
+                    document.getElementById('fileSize').textContent = size + ' B';
+                }
+            }
+
+            document.getElementById('analysisType').textContent =
+                data.session.status === 'running_in_vm' ? 'Dynamic' : 'Static';
+        }
+
+        function updateThreatScore(score) {
+            const scoreEl = document.getElementById('threatScore');
+            scoreEl.textContent = score || 0;
+
+            scoreEl.className = 'threat-score';
+            if (score >= 75) {
+                scoreEl.classList.add('threat-critical');
+            } else if (score >= 50) {
+                scoreEl.classList.add('threat-high');
+            } else if (score >= 25) {
+                scoreEl.classList.add('threat-medium');
+            } else {
+                scoreEl.classList.add('threat-low');
+            }
+        }
+
+        function updateStatus(status) {
+            const dot = document.getElementById('statusDot');
+            const text = document.getElementById('statusText');
+
+            dot.className = 'status-dot';
+
+            switch (status) {
+                case 'analyzing':
+                    dot.classList.add('analyzing');
+                    text.textContent = 'Analyzing...';
+                    break;
+                case 'running_in_vm':
+                    dot.classList.add('running');
+                    text.textContent = 'Running in VM';
+                    break;
+                case 'completed':
+                    dot.classList.add('completed');
+                    text.textContent = 'Completed';
+                    clearInterval(elapsedInterval);
+                    break;
+                case 'error':
+                    dot.classList.add('error');
+                    text.textContent = 'Error';
+                    break;
+                default:
+                    text.textContent = status;
+            }
+        }
+
+        function renderTabContent() {
+            const container = document.getElementById('tabContent');
+
+            if (!analysisData || Object.keys(analysisData).length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-hourglass-half"></i>
+                        <p>Waiting for analysis data...</p>
+                    </div>
+                `;
+                return;
+            }
+
+            let html = '';
+
+            switch (currentTab) {
+                case 'behaviors':
+                    html = renderBehaviors(analysisData.behaviors || []);
+                    break;
+                case 'network':
+                    html = renderNetwork(analysisData.network_events || []);
+                    break;
+                case 'processes':
+                    html = renderProcesses(analysisData.processes || []);
+                    break;
+                case 'iocs':
+                    html = renderIOCs(analysisData.iocs || []);
+                    break;
+                case 'strings':
+                    html = renderStrings(analysisData.strings || []);
+                    break;
+                case 'yara':
+                    html = renderYara(analysisData.yara_matches || []);
+                    break;
+            }
+
+            container.innerHTML = html;
+        }
+
+        function renderBehaviors(behaviors) {
+            if (behaviors.length === 0) {
+                return `<div class="empty-state"><i class="fas fa-check-circle"></i><p>No behavioral events detected</p></div>`;
+            }
+
+            return `<div class="event-list">
+                ${behaviors.map(b => `
+                    <div class="event-item severity-${b.severity}">
+                        <div class="event-time">${formatTime(b.timestamp)}</div>
+                        <div class="event-desc">${escapeHtml(b.description)}</div>
+                        <span class="event-type">${b.event_type}</span>
+                    </div>
+                `).join('')}
+            </div>`;
+        }
+
+        function renderNetwork(events) {
+            if (events.length === 0) {
+                return `<div class="empty-state"><i class="fas fa-network-wired"></i><p>No network activity detected</p></div>`;
+            }
+
+            return `<div class="event-list">
+                ${events.map(e => `
+                    <div class="event-item severity-medium">
+                        <div class="event-time">${formatTime(e.timestamp)}</div>
+                        <div class="event-desc">
+                            ${e.protocol} ${e.source_ip} -> ${e.destination_ip}:${e.destination_port}
+                            ${e.domain ? `<br>Domain: ${escapeHtml(e.domain)}` : ''}
+                            ${e.url ? `<br>URL: ${escapeHtml(e.url)}` : ''}
+                        </div>
+                        <span class="event-type">${e.protocol}</span>
+                    </div>
+                `).join('')}
+            </div>`;
+        }
+
+        function renderProcesses(processes) {
+            if (processes.length === 0) {
+                return `<div class="empty-state"><i class="fas fa-microchip"></i><p>No process activity detected</p></div>`;
+            }
+
+            return `<div class="event-list">
+                ${processes.map(p => `
+                    <div class="event-item severity-medium">
+                        <div class="event-time">${formatTime(p.timestamp)}</div>
+                        <div class="event-desc">
+                            <strong>${escapeHtml(p.process_name)}</strong> (PID: ${p.pid})
+                            <br>Parent PID: ${p.parent_pid}
+                            <br>User: ${escapeHtml(p.user || 'Unknown')}
+                            ${p.command_line ? `<br>Cmd: ${escapeHtml(p.command_line)}` : ''}
+                        </div>
+                        <span class="event-type">${p.status}</span>
+                    </div>
+                `).join('')}
+            </div>`;
+        }
+
+        function renderIOCs(iocs) {
+            if (iocs.length === 0) {
+                return `<div class="empty-state"><i class="fas fa-fingerprint"></i><p>No IOCs extracted</p></div>`;
+            }
+
+            return `<div class="event-list">
+                ${iocs.map(ioc => `
+                    <div class="event-item severity-high">
+                        <div class="event-desc">
+                            <strong>${ioc.ioc_type.toUpperCase()}</strong>: ${escapeHtml(ioc.value)}
+                            <br><small>${escapeHtml(ioc.description)}</small>
+                        </div>
+                        <span class="event-type">Confidence: ${ioc.confidence}</span>
+                    </div>
+                `).join('')}
+            </div>`;
+        }
+
+        function renderStrings(strings) {
+            if (strings.length === 0) {
+                return `<div class="empty-state"><i class="fas fa-font"></i><p>No strings extracted</p></div>`;
+            }
+
+            const suspicious = strings.filter(s => s.is_suspicious);
+            return `<div class="event-list">
+                <div style="margin-bottom: 10px; color: #888; font-size: 11px;">
+                    Total: ${strings.length} | Suspicious: ${suspicious.length}
+                </div>
+                ${strings.slice(0, 50).map(s => `
+                    <div class="event-item ${s.is_suspicious ? 'severity-high' : 'severity-low'}">
+                        <div class="event-desc" style="font-family: monospace; font-size: 11px;">
+                            ${escapeHtml(s.value)}
+                        </div>
+                        <span class="event-type">${s.string_type} @ 0x${s.offset.toString(16)}</span>
+                    </div>
+                `).join('')}
+            </div>`;
+        }
+
+        function renderYara(matches) {
+            if (matches.length === 0) {
+                return `<div class="empty-state"><i class="fas fa-search"></i><p>No YARA rules matched</p></div>`;
+            }
+
+            return `<div class="event-list">
+                ${matches.map(m => `
+                    <div class="event-item severity-${m.severity}">
+                        <div class="event-desc">
+                            <strong>${escapeHtml(m.rule_name)}</strong>
+                            <br>${escapeHtml(m.description)}
+                        </div>
+                        <span class="event-type">${m.category}</span>
+                    </div>
+                `).join('')}
+            </div>`;
+        }
+
+        function formatTime(timestamp) {
+            if (!timestamp) return '-';
+            const date = new Date(timestamp);
+            return date.toLocaleTimeString();
+        }
+
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function startElapsedTimer() {
+            elapsedInterval = setInterval(() => {
+                const elapsed = Math.floor((Date.now() - startTime) / 1000);
+                const minutes = Math.floor(elapsed / 60).toString().padStart(2, '0');
+                const seconds = (elapsed % 60).toString().padStart(2, '0');
+                document.getElementById('elapsedTime').textContent = `${minutes}:${seconds}`;
+            }, 1000);
+        }
+
+        async function checkVNCConnection() {
+            try {
+                const response = await fetch(`/api/session/${sessionId}/vnc`);
+                const data = await response.json();
+
+                if (data.success) {
+                    document.getElementById('vncStatus').textContent =
+                        `VNC available on ${data.ws_url}. Connect with noVNC client.`;
+                } else {
+                    document.getElementById('vncStatus').textContent =
+                        'Static analysis mode - No VM display';
+                }
+            } catch (error) {
+                document.getElementById('vncStatus').textContent =
+                    'Static analysis mode - No VM display';
+            }
+        }
+
+        // Auto-refresh data every 3 seconds
+        setInterval(loadSessionData, 3000);
+
+        // Control buttons
+        document.getElementById('fullscreenBtn').addEventListener('click', () => {
+            const viewer = document.querySelector('.main-viewer');
+            if (viewer.requestFullscreen) {
+                viewer.requestFullscreen();
+            }
+        });
+
+        document.getElementById('refreshBtn').addEventListener('click', () => {
+            loadSessionData();
+            checkVNCConnection();
+        });
+
+        document.getElementById('screenshotBtn').addEventListener('click', async () => {
+            try {
+                const response = await fetch(`/api/session/${sessionId}/screenshots`);
+                const screenshots = await response.json();
+                if (screenshots.length > 0) {
+                    const latest = screenshots[screenshots.length - 1];
+                    window.open(`/api/session/${sessionId}/screenshot/${latest.filename}`);
+                } else {
+                    alert('No screenshots available yet');
+                }
+            } catch (error) {
+                alert('Failed to fetch screenshots');
+            }
+        });
+    </script>
+</body>
+</html>
