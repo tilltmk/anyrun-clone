@@ -26,7 +26,15 @@ class VMManager:
             print(f"Libvirt connection error: {e}")
             self.conn = None
 
-        self.vm_configs = {
+        # Load VM configs from setup configuration
+        self.vm_configs = self._load_vm_configs()
+
+    def _load_vm_configs(self):
+        """Load VM configurations from setup config file"""
+        config_file = 'config/setup.json'
+
+        # Default configurations (fallback)
+        default_configs = {
             'windows10': {
                 'name': 'anyrun-windows10',
                 'memory': 4096,  # 4GB
@@ -55,6 +63,34 @@ class VMManager:
                 'network': 'isolated'
             }
         }
+
+        # Try to load from setup config
+        if os.path.exists(config_file):
+            try:
+                with open(config_file, 'r') as f:
+                    setup_config = json.load(f)
+
+                # Merge with templates from setup
+                vm_templates = setup_config.get('vm_templates', {})
+                for os_type, template in vm_templates.items():
+                    if template.get('status') == 'ready':
+                        default_configs[os_type] = {
+                            'name': template.get('name', f'anyrun-{os_type}'),
+                            'memory': template.get('memory', 4096),
+                            'vcpus': 2,
+                            'disk_path': template.get('disk_path'),
+                            'snapshot': template.get('snapshot', 'clean-state'),
+                            'vnc_port': template.get('vnc_port', 5900),
+                            'network': template.get('network', 'isolated')
+                        }
+            except Exception as e:
+                print(f"Warning: Could not load VM config from setup: {e}")
+
+        return default_configs
+
+    def reload_configs(self):
+        """Reload VM configurations from setup config"""
+        self.vm_configs = self._load_vm_configs()
 
     def create_vm(self, os_type='windows10', session_id=None):
         """Create and configure a new VM instance"""

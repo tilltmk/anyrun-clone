@@ -1,0 +1,798 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AnyRun Clone - Initial Setup</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            min-height: 100vh;
+            color: #e0e0e0;
+        }
+
+        .setup-container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+
+        .setup-header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .setup-header h1 {
+            font-size: 2.5em;
+            color: #4fc3f7;
+            margin-bottom: 10px;
+        }
+
+        .setup-header p {
+            color: #9e9e9e;
+            font-size: 1.1em;
+        }
+
+        .step-indicator {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 40px;
+            gap: 10px;
+        }
+
+        .step {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .step-circle {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: #2a2a4a;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+
+        .step-circle.active {
+            background: #4fc3f7;
+            color: #1a1a2e;
+        }
+
+        .step-circle.completed {
+            background: #4caf50;
+            color: white;
+        }
+
+        .step-line {
+            width: 60px;
+            height: 3px;
+            background: #2a2a4a;
+        }
+
+        .step-line.completed {
+            background: #4caf50;
+        }
+
+        .step-content {
+            background: #1e1e3f;
+            border-radius: 12px;
+            padding: 30px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .step-content h2 {
+            color: #4fc3f7;
+            margin-bottom: 20px;
+            font-size: 1.5em;
+        }
+
+        .status-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .status-item {
+            background: #2a2a4a;
+            padding: 15px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .status-icon {
+            font-size: 1.5em;
+        }
+
+        .status-icon.ok {
+            color: #4caf50;
+        }
+
+        .status-icon.error {
+            color: #f44336;
+        }
+
+        .status-icon.warning {
+            color: #ff9800;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-primary {
+            background: #4fc3f7;
+            color: #1a1a2e;
+        }
+
+        .btn-primary:hover {
+            background: #29b6f6;
+            transform: translateY(-2px);
+        }
+
+        .btn-primary:disabled {
+            background: #546e7a;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-success {
+            background: #4caf50;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #43a047;
+        }
+
+        .btn-danger {
+            background: #f44336;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #e53935;
+        }
+
+        .iso-list {
+            max-height: 300px;
+            overflow-y: auto;
+            background: #2a2a4a;
+            border-radius: 8px;
+            padding: 10px;
+        }
+
+        .iso-item {
+            display: flex;
+            align-items: center;
+            padding: 12px;
+            margin-bottom: 8px;
+            background: #1e1e3f;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .iso-item:hover {
+            background: #363668;
+        }
+
+        .iso-item.selected {
+            background: #4fc3f7;
+            color: #1a1a2e;
+        }
+
+        .iso-item input[type="radio"] {
+            margin-right: 10px;
+        }
+
+        .iso-info {
+            flex: 1;
+        }
+
+        .iso-name {
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .iso-path {
+            font-size: 0.85em;
+            color: #9e9e9e;
+            word-break: break-all;
+        }
+
+        .iso-item.selected .iso-path {
+            color: #1a1a2e;
+        }
+
+        .iso-size {
+            font-weight: 500;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+        }
+
+        .form-group select,
+        .form-group input {
+            width: 100%;
+            padding: 10px;
+            border-radius: 6px;
+            border: 1px solid #4a4a7a;
+            background: #2a2a4a;
+            color: #e0e0e0;
+            font-size: 1em;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .alert {
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .alert-info {
+            background: #0d47a1;
+            border: 1px solid #1565c0;
+        }
+
+        .alert-success {
+            background: #1b5e20;
+            border: 1px solid #2e7d32;
+        }
+
+        .alert-error {
+            background: #b71c1c;
+            border: 1px solid #c62828;
+        }
+
+        .alert-warning {
+            background: #e65100;
+            border: 1px solid #ef6c00;
+        }
+
+        .spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 1s linear infinite;
+            margin-right: 10px;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .vm-template-item {
+            background: #2a2a4a;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+        }
+
+        .vm-template-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .vm-template-header h3 {
+            color: #4fc3f7;
+        }
+
+        .status-badge {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            font-weight: 600;
+        }
+
+        .status-badge.ready {
+            background: #4caf50;
+            color: white;
+        }
+
+        .status-badge.pending {
+            background: #ff9800;
+            color: white;
+        }
+
+        .status-badge.installing {
+            background: #2196f3;
+            color: white;
+        }
+
+        .vnc-info {
+            background: #1a1a2e;
+            padding: 10px;
+            border-radius: 6px;
+            font-family: monospace;
+            margin-top: 10px;
+        }
+
+        .skip-btn {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: transparent;
+            border: 1px solid #4fc3f7;
+            color: #4fc3f7;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .skip-btn:hover {
+            background: #4fc3f7;
+            color: #1a1a2e;
+        }
+
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <button class="skip-btn" onclick="skipSetup()">Skip Setup (Static Only)</button>
+
+    <div class="setup-container">
+        <div class="setup-header">
+            <h1>🔒 AnyRun Clone Setup</h1>
+            <p>Configure your malware analysis environment</p>
+        </div>
+
+        <div class="step-indicator">
+            <div class="step">
+                <div class="step-circle active" id="step1-circle">1</div>
+            </div>
+            <div class="step-line" id="line1"></div>
+            <div class="step">
+                <div class="step-circle" id="step2-circle">2</div>
+            </div>
+            <div class="step-line" id="line2"></div>
+            <div class="step">
+                <div class="step-circle" id="step3-circle">3</div>
+            </div>
+            <div class="step-line" id="line3"></div>
+            <div class="step">
+                <div class="step-circle" id="step4-circle">4</div>
+            </div>
+        </div>
+
+        <!-- Step 1: System Check -->
+        <div class="step-content" id="step1">
+            <h2>Step 1: System Requirements Check</h2>
+            <div class="status-grid" id="system-status">
+                <div class="status-item">
+                    <span class="status-icon" id="kvm-status">⏳</span>
+                    <div>KVM Available</div>
+                </div>
+                <div class="status-item">
+                    <span class="status-icon" id="qemu-status">⏳</span>
+                    <div>QEMU Installed</div>
+                </div>
+                <div class="status-item">
+                    <span class="status-icon" id="libvirt-status">⏳</span>
+                    <div>Libvirt Connected</div>
+                </div>
+                <div class="status-item">
+                    <span class="status-icon" id="images-dir-status">⏳</span>
+                    <div>Images Directory</div>
+                </div>
+            </div>
+            <button class="btn btn-primary" onclick="checkSystem()">Check System</button>
+            <button class="btn btn-success hidden" id="next-step1" onclick="goToStep(2)">Continue</button>
+        </div>
+
+        <!-- Step 2: Network Setup -->
+        <div class="step-content hidden" id="step2">
+            <h2>Step 2: Network Configuration</h2>
+            <div class="alert alert-info">
+                An isolated network is required for safe malware analysis.
+                This network will be created automatically.
+            </div>
+            <div id="network-status"></div>
+            <button class="btn btn-primary" onclick="createNetwork()">Create Isolated Network</button>
+            <button class="btn btn-success hidden" id="next-step2" onclick="goToStep(3)">Continue</button>
+        </div>
+
+        <!-- Step 3: ISO Selection -->
+        <div class="step-content hidden" id="step3">
+            <h2>Step 3: Select ISO Image</h2>
+            <div class="alert alert-info">
+                Select a Windows or Linux ISO to create a VM template for dynamic analysis.
+                The system will search common directories for ISO files.
+            </div>
+            <button class="btn btn-primary" onclick="searchISOs()" id="search-iso-btn">Search for ISOs</button>
+            <div id="iso-search-status"></div>
+            <div class="iso-list hidden" id="iso-list"></div>
+
+            <div class="form-group hidden" id="os-type-select">
+                <label>Operating System Type:</label>
+                <select id="os-type">
+                    <option value="windows10">Windows 10/11</option>
+                    <option value="windows7">Windows 7</option>
+                    <option value="ubuntu">Ubuntu Linux</option>
+                    <option value="debian">Debian Linux</option>
+                </select>
+            </div>
+
+            <div class="form-row hidden" id="vm-config">
+                <div class="form-group">
+                    <label>Memory (MB):</label>
+                    <input type="number" id="vm-memory" value="4096" min="1024" max="16384">
+                </div>
+                <div class="form-group">
+                    <label>Disk Size (GB):</label>
+                    <input type="number" id="vm-disk" value="40" min="20" max="200">
+                </div>
+            </div>
+
+            <button class="btn btn-success hidden" id="create-template-btn" onclick="createTemplate()">
+                Create VM Template
+            </button>
+        </div>
+
+        <!-- Step 4: OS Installation -->
+        <div class="step-content hidden" id="step4">
+            <h2>Step 4: Complete OS Installation</h2>
+            <div class="alert alert-warning">
+                <strong>Important:</strong> You need to complete the OS installation via VNC.
+                After installation, install the QEMU Guest Agent for best results.
+            </div>
+
+            <div id="vm-templates-list"></div>
+
+            <div class="alert alert-info">
+                <strong>Installation Tips:</strong>
+                <ul style="margin-top: 10px; margin-left: 20px;">
+                    <li>Create a user named "Sandbox" for Windows</li>
+                    <li>Enable Remote Desktop or WinRM for remote execution</li>
+                    <li>Install QEMU Guest Agent from virtio drivers</li>
+                    <li>Disable Windows Updates and Defender for analysis</li>
+                </ul>
+            </div>
+
+            <button class="btn btn-success" onclick="finishSetup()">Complete Setup</button>
+        </div>
+    </div>
+
+    <script>
+        let currentStep = 1;
+        let selectedIso = null;
+        let systemStatus = {};
+
+        async function checkSystem() {
+            const btn = event.target;
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner"></span>Checking...';
+
+            try {
+                const response = await fetch('/api/setup/status');
+                systemStatus = await response.json();
+
+                document.getElementById('kvm-status').textContent = systemStatus.kvm_available ? '✅' : '❌';
+                document.getElementById('kvm-status').className = 'status-icon ' + (systemStatus.kvm_available ? 'ok' : 'error');
+
+                document.getElementById('qemu-status').textContent = systemStatus.qemu_installed ? '✅' : '❌';
+                document.getElementById('qemu-status').className = 'status-icon ' + (systemStatus.qemu_installed ? 'ok' : 'error');
+
+                document.getElementById('libvirt-status').textContent = systemStatus.libvirt_connected ? '✅' : '❌';
+                document.getElementById('libvirt-status').className = 'status-icon ' + (systemStatus.libvirt_connected ? 'ok' : 'error');
+
+                document.getElementById('images-dir-status').textContent = systemStatus.images_dir_writable ? '✅' : '⚠️';
+                document.getElementById('images-dir-status').className = 'status-icon ' + (systemStatus.images_dir_writable ? 'ok' : 'warning');
+
+                if (systemStatus.kvm_available && systemStatus.qemu_installed && systemStatus.libvirt_connected) {
+                    document.getElementById('next-step1').classList.remove('hidden');
+                } else {
+                    alert('Some requirements are not met. Please install missing dependencies.');
+                }
+            } catch (error) {
+                alert('Error checking system: ' + error.message);
+            }
+
+            btn.disabled = false;
+            btn.textContent = 'Check System';
+        }
+
+        async function createNetwork() {
+            const btn = event.target;
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner"></span>Creating Network...';
+
+            try {
+                const response = await fetch('/api/setup/network', { method: 'POST' });
+                const result = await response.json();
+
+                const statusDiv = document.getElementById('network-status');
+                if (result.success) {
+                    statusDiv.innerHTML = `<div class="alert alert-success">${result.message}</div>`;
+                    document.getElementById('next-step2').classList.remove('hidden');
+                } else {
+                    statusDiv.innerHTML = `<div class="alert alert-error">Error: ${result.error}</div>`;
+                }
+            } catch (error) {
+                document.getElementById('network-status').innerHTML =
+                    `<div class="alert alert-error">Error: ${error.message}</div>`;
+            }
+
+            btn.disabled = false;
+            btn.textContent = 'Create Isolated Network';
+        }
+
+        async function searchISOs() {
+            const btn = document.getElementById('search-iso-btn');
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner"></span>Searching...';
+
+            const statusDiv = document.getElementById('iso-search-status');
+            statusDiv.innerHTML = '<div class="alert alert-info">Searching for ISO files... This may take a moment.</div>';
+
+            try {
+                const response = await fetch('/api/setup/isos');
+                const result = await response.json();
+
+                if (result.isos && result.isos.length > 0) {
+                    const listDiv = document.getElementById('iso-list');
+                    listDiv.innerHTML = '';
+
+                    result.isos.forEach((iso, index) => {
+                        const item = document.createElement('div');
+                        item.className = 'iso-item';
+                        item.onclick = () => selectIso(iso.path, index);
+                        item.innerHTML = `
+                            <input type="radio" name="iso" id="iso-${index}">
+                            <div class="iso-info">
+                                <div class="iso-name">${iso.name}</div>
+                                <div class="iso-path">${iso.path}</div>
+                            </div>
+                            <div class="iso-size">${iso.size_human}</div>
+                        `;
+                        listDiv.appendChild(item);
+                    });
+
+                    listDiv.classList.remove('hidden');
+                    statusDiv.innerHTML = `<div class="alert alert-success">Found ${result.isos.length} ISO file(s)</div>`;
+                } else {
+                    statusDiv.innerHTML = `<div class="alert alert-warning">No ISO files found. Please place an ISO in ~/Downloads or /var/lib/libvirt/images/</div>`;
+                }
+            } catch (error) {
+                statusDiv.innerHTML = `<div class="alert alert-error">Error: ${error.message}</div>`;
+            }
+
+            btn.disabled = false;
+            btn.textContent = 'Search for ISOs';
+        }
+
+        function selectIso(path, index) {
+            selectedIso = path;
+
+            // Update visual selection
+            document.querySelectorAll('.iso-item').forEach((item, i) => {
+                if (i === index) {
+                    item.classList.add('selected');
+                    item.querySelector('input').checked = true;
+                } else {
+                    item.classList.remove('selected');
+                    item.querySelector('input').checked = false;
+                }
+            });
+
+            // Show configuration options
+            document.getElementById('os-type-select').classList.remove('hidden');
+            document.getElementById('vm-config').classList.remove('hidden');
+            document.getElementById('create-template-btn').classList.remove('hidden');
+        }
+
+        async function createTemplate() {
+            if (!selectedIso) {
+                alert('Please select an ISO file first');
+                return;
+            }
+
+            const btn = document.getElementById('create-template-btn');
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner"></span>Creating Template...';
+
+            const osType = document.getElementById('os-type').value;
+            const memory = document.getElementById('vm-memory').value;
+            const diskSize = document.getElementById('vm-disk').value;
+
+            try {
+                const response = await fetch('/api/setup/template', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        iso_path: selectedIso,
+                        os_type: osType,
+                        memory: parseInt(memory),
+                        disk_size: parseInt(diskSize)
+                    })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    alert(result.message);
+                    goToStep(4);
+                } else {
+                    alert('Error: ' + result.error);
+                }
+            } catch (error) {
+                alert('Error: ' + error.message);
+            }
+
+            btn.disabled = false;
+            btn.textContent = 'Create VM Template';
+        }
+
+        async function loadVMTemplates() {
+            try {
+                const response = await fetch('/api/setup/status');
+                const status = await response.json();
+
+                const listDiv = document.getElementById('vm-templates-list');
+                listDiv.innerHTML = '';
+
+                if (Object.keys(status.vm_templates).length === 0) {
+                    listDiv.innerHTML = '<div class="alert alert-warning">No VM templates created yet.</div>';
+                    return;
+                }
+
+                for (const [osType, template] of Object.entries(status.vm_templates)) {
+                    const item = document.createElement('div');
+                    item.className = 'vm-template-item';
+                    item.innerHTML = `
+                        <div class="vm-template-header">
+                            <h3>${template.name}</h3>
+                            <span class="status-badge ${template.status}">${template.status}</span>
+                        </div>
+                        <p>Memory: ${template.memory} MB | VNC Port: ${template.vnc_port}</p>
+                        <div class="vnc-info">
+                            VNC: vnc://localhost:${template.vnc_port}
+                        </div>
+                        <div style="margin-top: 15px;">
+                            <button class="btn btn-primary" onclick="startVM('${osType}')">Start VM</button>
+                            <button class="btn btn-danger" onclick="stopVM('${osType}')">Stop VM</button>
+                            ${template.needs_installation ?
+                                `<button class="btn btn-success" onclick="markComplete('${osType}')">Mark Installation Complete</button>` : ''}
+                        </div>
+                    `;
+                    listDiv.appendChild(item);
+                }
+            } catch (error) {
+                console.error('Error loading templates:', error);
+            }
+        }
+
+        async function startVM(osType) {
+            try {
+                const response = await fetch(`/api/setup/vm/${osType}/start`, { method: 'POST' });
+                const result = await response.json();
+                alert(result.message || result.error);
+            } catch (error) {
+                alert('Error: ' + error.message);
+            }
+        }
+
+        async function stopVM(osType) {
+            try {
+                const response = await fetch(`/api/setup/vm/${osType}/stop`, { method: 'POST' });
+                const result = await response.json();
+                alert(result.message || result.error);
+            } catch (error) {
+                alert('Error: ' + error.message);
+            }
+        }
+
+        async function markComplete(osType) {
+            if (!confirm('Have you completed the OS installation and installed the QEMU Guest Agent?')) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/setup/vm/${osType}/complete`, { method: 'POST' });
+                const result = await response.json();
+                alert(result.message || result.error);
+                loadVMTemplates();
+            } catch (error) {
+                alert('Error: ' + error.message);
+            }
+        }
+
+        async function finishSetup() {
+            try {
+                const response = await fetch('/api/setup/complete', { method: 'POST' });
+                const result = await response.json();
+
+                if (result.success) {
+                    alert('Setup complete! Redirecting to main application...');
+                    window.location.href = '/';
+                } else {
+                    alert('Warning: ' + result.message);
+                }
+            } catch (error) {
+                alert('Error: ' + error.message);
+            }
+        }
+
+        function skipSetup() {
+            if (confirm('Skip setup? You will only be able to perform static analysis without KVM support.')) {
+                fetch('/api/setup/skip', { method: 'POST' })
+                    .then(() => window.location.href = '/')
+                    .catch(() => window.location.href = '/');
+            }
+        }
+
+        function goToStep(step) {
+            // Hide current step
+            document.getElementById(`step${currentStep}`).classList.add('hidden');
+
+            // Mark current step as completed
+            document.getElementById(`step${currentStep}-circle`).classList.remove('active');
+            document.getElementById(`step${currentStep}-circle`).classList.add('completed');
+            document.getElementById(`step${currentStep}-circle`).textContent = '✓';
+
+            if (currentStep < 4) {
+                document.getElementById(`line${currentStep}`).classList.add('completed');
+            }
+
+            // Show new step
+            currentStep = step;
+            document.getElementById(`step${step}`).classList.remove('hidden');
+            document.getElementById(`step${step}-circle`).classList.add('active');
+
+            // Load data for step 4
+            if (step === 4) {
+                loadVMTemplates();
+            }
+        }
+
+        // Initial check on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            // Auto-check system status
+            setTimeout(checkSystem, 500);
+        });
+    </script>
+</body>
+</html>
