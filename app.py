@@ -14,6 +14,7 @@ from models import (
 from real_analyzer import RealAnalyzer
 from vm_manager import VMManager
 from vnc_proxy import VNCWebSocketProxy
+from setup_manager import SetupManager
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'change-this-in-production')
@@ -44,6 +45,7 @@ os.makedirs(app.config['RESULTS_FOLDER'], exist_ok=True)
 analyzer = None  # Will be initialized after socketio
 vm_manager = VMManager()
 vnc_proxy = VNCWebSocketProxy()
+setup_manager = SetupManager()
 active_sessions = {}  # Track active analysis sessions
 
 
@@ -73,7 +75,16 @@ def analyze_in_background(filepath, filename, session_id, analysis_type='static'
 @app.route('/')
 def index():
     """Modern home page with KVM support"""
+    # Check if setup is needed
+    if setup_manager.needs_setup():
+        return redirect(url_for('setup_wizard'))
     return render_template('modern_index.html')
+
+
+@app.route('/setup')
+def setup_wizard():
+    """Initial setup wizard"""
+    return render_template('setup.html')
 
 
 @app.route('/upload', methods=['POST'])
@@ -453,6 +464,101 @@ def get_vm_status(session_id):
     return jsonify({'status': 'not_found'})
 
 
+# ============================================
+# SETUP API ENDPOINTS
+# ============================================
+
+@app.route('/api/setup/status')
+def get_setup_status():
+    """Get current setup status"""
+    return jsonify(setup_manager.get_setup_status())
+
+
+@app.route('/api/setup/network', methods=['POST'])
+def create_network():
+    """Create isolated network for VM analysis"""
+    result = setup_manager.create_isolated_network()
+    return jsonify(result)
+
+
+@app.route('/api/setup/isos')
+def list_isos():
+    """Search for ISO files on the system"""
+    isos = setup_manager.list_iso_files()
+    return jsonify({'isos': isos})
+
+
+@app.route('/api/setup/template', methods=['POST'])
+def create_vm_template():
+    """Create a VM template from an ISO"""
+    data = request.get_json()
+    iso_path = data.get('iso_path')
+    os_type = data.get('os_type', 'windows10')
+    memory = data.get('memory', 4096)
+    disk_size = data.get('disk_size', 40)
+
+    if not iso_path:
+        return jsonify({'success': False, 'error': 'ISO path is required'}), 400
+
+    result = setup_manager.create_vm_template(
+        iso_path=iso_path,
+        os_type=os_type,
+        memory=memory,
+        disk_size=disk_size
+    )
+    return jsonify(result)
+
+
+@app.route('/api/setup/vm/<os_type>/start', methods=['POST'])
+def start_vm_for_setup(os_type):
+    """Start VM for OS installation"""
+    result = setup_manager.start_vm_for_installation(os_type)
+    return jsonify(result)
+
+
+@app.route('/api/setup/vm/<os_type>/stop', methods=['POST'])
+def stop_vm_for_setup(os_type):
+    """Stop VM"""
+    result = setup_manager.stop_vm(os_type)
+    return jsonify(result)
+
+
+@app.route('/api/setup/vm/<os_type>/complete', methods=['POST'])
+def mark_vm_complete(os_type):
+    """Mark VM installation as complete and create snapshot"""
+    result = setup_manager.mark_installation_complete(os_type)
+    return jsonify(result)
+
+
+@app.route('/api/setup/complete', methods=['POST'])
+def complete_setup():
+    """Mark setup as complete"""
+    status = setup_manager.get_setup_status()
+
+    # Check if at least one template is ready
+    ready_templates = [t for t in status['vm_templates'].values()
+                      if t.get('status') == 'ready']
+
+    if ready_templates:
+        setup_manager.config['setup_complete'] = True
+        setup_manager._save_config()
+        return jsonify({'success': True, 'message': 'Setup complete!'})
+    else:
+        return jsonify({
+            'success': False,
+            'message': 'Please complete at least one VM template installation first'
+        })
+
+
+@app.route('/api/setup/skip', methods=['POST'])
+def skip_setup():
+    """Skip setup for static-only analysis"""
+    setup_manager.config['setup_complete'] = True
+    setup_manager.config['static_only'] = True
+    setup_manager._save_config()
+    return jsonify({'success': True, 'message': 'Setup skipped. Static analysis only.'})
+
+
 @app.errorhandler(404)
 def not_found(e):
     return render_template('404.html'), 404
@@ -534,6 +640,26 @@ if __name__ == '__main__':
     print("  - Real PE File Analysis")
     print("  - VNC WebSocket Proxy for Live VM Stream")
     print("  - WebSocket Real-time Updates")
+    print("=" * 70)
+
+    # Check setup status
+    setup_status = setup_manager.get_setup_status()
+    if setup_manager.needs_setup():
+        print("SETUP REQUIRED:")
+        print("  First-time setup wizard will guide you through configuration.")
+        print("  - Configure isolated network for VM analysis")
+        print("  - Select ISO image and create VM template")
+        print("  - Complete OS installation via VNC")
+    else:
+        print("SETUP STATUS: Complete")
+        if setup_status.get('vm_templates'):
+            print(f"  VM Templates: {len(setup_status['vm_templates'])} configured")
+            for os_type, template in setup_status['vm_templates'].items():
+                status = template.get('status', 'unknown')
+                print(f"    - {os_type}: {status}")
+        if setup_status.get('static_only'):
+            print("  Mode: Static Analysis Only (KVM disabled)")
+
     print("=" * 70)
     print("IMPORTANT: This version performs REAL analysis.")
     print("  Static Analysis: Analyzes file without execution")
