@@ -31,7 +31,7 @@ ALLOWED_EXTENSIONS = {
 }
 
 # Initialize SocketIO
-socketio = SocketIO(app, cors_allowed_origins="*", async_mode='eventlet')
+socketio = SocketIO(app, cors_allowed_origins="*", async_mode='threading')
 
 # Initialize database
 db.init_app(app)

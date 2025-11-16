@@ -111,9 +111,9 @@ async function startAnalysis() {
     formData.append('os_type', state.selectedOS);
 
     // Get analysis options
-    const networkMonitoring = document.querySelector('input[type="checkbox"]:nth-of-type(1)').checked;
-    const recordVideo = document.querySelector('input[type="checkbox"]:nth-of-type(2)').checked;
-    const extendedAnalysis = document.querySelector('input[type="checkbox"]:nth-of-type(3)').checked;
+    const networkMonitoring = document.getElementById('networkMonitoring').checked;
+    const recordVideo = document.getElementById('recordVideo').checked;
+    const extendedAnalysis = document.getElementById('extendedAnalysis').checked;
 
     formData.append('network_monitoring', networkMonitoring);
     formData.append('record_video', recordVideo);
