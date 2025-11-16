@@ -1,4 +1,5 @@
 from flask import Flask, render_template, request, jsonify, redirect, url_for, send_from_directory, send_file
+from flask_socketio import SocketIO, emit
 from werkzeug.utils import secure_filename
 import os
 import uuid
@@ -11,6 +12,8 @@ from models import (
     MemoryRegion, Screenshot, YaraMatch, Certificate
 )
 from advanced_analyzer import AdvancedAnalyzer
+from vm_manager import VMManager
+from network_monitor import NetworkMonitor
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'dev-secret-key-change-in-production'
@@ -23,8 +26,12 @@ app.config['MAX_CONTENT_LENGTH'] = 100 * 1024 * 1024  # 100MB max file size
 # Allowed file extensions for upload
 ALLOWED_EXTENSIONS = {
     'exe', 'dll', 'pdf', 'docx', 'xlsx', 'zip', 'rar',
-    'js', 'vbs', 'bat', 'ps1', 'py', 'jar', 'apk'
+    'js', 'vbs', 'bat', 'ps1', 'py', 'jar', 'apk', 'msi',
+    'scr', 'com', 'pif', 'hta', 'cpl', 'msc'
 }
+
+# Initialize SocketIO
+socketio = SocketIO(app, cors_allowed_origins="*", async_mode='eventlet')
 
 # Initialize database
 db.init_app(app)
@@ -33,8 +40,10 @@ db.init_app(app)
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 os.makedirs(app.config['RESULTS_FOLDER'], exist_ok=True)
 
-# Initialize advanced analyzer
+# Initialize components
 analyzer = AdvancedAnalyzer()
+vm_manager = VMManager()
+active_sessions = {}  # Track active analysis sessions
 
 
 def allowed_file(filename):
@@ -50,8 +59,8 @@ def analyze_in_background(filepath, filename, session_id):
 
 @app.route('/')
 def index():
-    """Home page"""
-    return render_template('index.html')
+    """Modern home page with KVM support"""
+    return render_template('modern_index.html')
 
 
 @app.route('/upload', methods=['POST'])
@@ -378,12 +387,81 @@ def not_found(e):
     return render_template('404.html'), 404
 
 
+# ============================================
+# WEBSOCKET EVENTS
+# ============================================
+
+@socketio.on('connect')
+def handle_connect():
+    """Handle client connection"""
+    print(f'Client connected: {request.sid}')
+    emit('connection_response', {'status': 'connected'})
+
+
+@socketio.on('disconnect')
+def handle_disconnect():
+    """Handle client disconnection"""
+    print(f'Client disconnected: {request.sid}')
+
+
+@socketio.on('join_session')
+def handle_join_session(data):
+    """Join a specific analysis session room"""
+    session_id = data.get('session_id')
+    if session_id:
+        # Join room for this session
+        from flask_socketio import join_room
+        join_room(session_id)
+        emit('joined_session', {'session_id': session_id})
+
+
+@socketio.on('leave_session')
+def handle_leave_session(data):
+    """Leave analysis session room"""
+    session_id = data.get('session_id')
+    if session_id:
+        from flask_socketio import leave_room
+        leave_room(session_id)
+
+
+def broadcast_session_update(session_id, event_type, data):
+    """Broadcast update to all clients watching a session"""
+    socketio.emit('session_update', {
+        'session_id': session_id,
+        'event_type': event_type,
+        'data': data
+    }, room=session_id)
+
+
+def broadcast_stats():
+    """Broadcast updated stats to all clients"""
+    total_sessions = AnalysisSession.query.count()
+    analyzing = AnalysisSession.query.filter_by(status='analyzing').count()
+
+    socketio.emit('stats_update', {
+        'total_sessions': total_sessions,
+        'analyzing': analyzing
+    })
+
+
 if __name__ == '__main__':
     with app.app_context():
         db.create_all()
-    print("=" * 60)
-    print("🔒 AnyRun Clone - Interactive Malware Analysis Sandbox")
-    print("=" * 60)
+
+    print("=" * 70)
+    print("🔒  AnyRun Clone v3.0 - Full-Featured KVM Edition")
+    print("=" * 70)
+    print("Features:")
+    print("  ✓ Real KVM/QEMU Virtual Machines")
+    print("  ✓ WebSocket Real-time Updates")
+    print("  ✓ Network Traffic Capture with Scapy")
+    print("  ✓ Interactive VM Control (VNC)")
+    print("  ✓ Video Recording")
+    print("  ✓ Modern Dark Theme UI")
+    print("=" * 70)
     print("Server starting on http://localhost:5000")
-    print("=" * 60)
-    app.run(debug=True, host='0.0.0.0', port=5000, threaded=True)
+    print("WebSocket enabled on ws://localhost:5000")
+    print("=" * 70)
+
+    # Run with SocketIO
+    socketio.run(app, debug=True, host='0.0.0.0', port=5000, allow_unsafe_werkzeug=True)
