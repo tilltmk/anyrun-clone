@@ -2,40 +2,149 @@
 
 {% block title %}Dashboard - AnyRun Clone{% endblock %}
 
+{% block extra_css %}
+<style>
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 25px;
+        margin-bottom: 40px;
+    }
+
+    .stat-card {
+        background: #0a2d47;
+        padding: 30px;
+        border-radius: 12px;
+        text-align: center;
+        border: 1px solid #0f3654;
+        transition: all 0.3s;
+    }
+
+    .stat-card:hover {
+        transform: translateY(-3px);
+        border-color: #00baf5;
+    }
+
+    .stat-icon {
+        font-size: 48px;
+        margin-bottom: 15px;
+        color: #00baf5;
+    }
+
+    .stat-card h3 {
+        font-size: 42px;
+        color: #fff;
+        margin: 0 0 10px 0;
+    }
+
+    .stat-card p {
+        color: #7b8795;
+        font-size: 1.1em;
+        margin: 0;
+    }
+
+    .recent-sessions {
+        background: #0a2d47;
+        border-radius: 12px;
+        padding: 30px;
+        border: 1px solid #0f3654;
+    }
+
+    .recent-sessions h3 {
+        color: #00baf5;
+        margin-bottom: 25px;
+        font-size: 1.5em;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .sessions-table {
+        background: #052440;
+        border-radius: 8px;
+        overflow: hidden;
+    }
+
+    .sessions-table th {
+        padding: 15px;
+    }
+
+    .sessions-table td {
+        padding: 15px;
+    }
+
+    .sessions-table tr:nth-child(even) {
+        background: #0a2d47;
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 50px 20px;
+        color: #7b8795;
+    }
+
+    .empty-state i {
+        font-size: 64px;
+        color: #3b4d62;
+        margin-bottom: 20px;
+    }
+
+    .empty-state p {
+        font-size: 1.2em;
+        margin-bottom: 20px;
+    }
+
+    .loading {
+        text-align: center;
+        padding: 30px;
+        color: #7b8795;
+    }
+
+    .loading i {
+        font-size: 32px;
+        color: #00baf5;
+        margin-bottom: 10px;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="container">
     <div class="page-header">
-        <h2>Analysis Dashboard</h2>
+        <h2><i class="fas fa-chart-line"></i> Analysis Dashboard</h2>
         <p>Overview of all analysis activities</p>
     </div>
 
     <div class="stats-grid">
         <div class="stat-card">
-            <div class="stat-icon">📊</div>
+            <div class="stat-icon"><i class="fas fa-database"></i></div>
             <h3 id="totalSessions">0</h3>
             <p>Total Sessions</p>
         </div>
         <div class="stat-card">
-            <div class="stat-icon">✅</div>
+            <div class="stat-icon"><i class="fas fa-check-circle"></i></div>
             <h3 id="completedSessions">0</h3>
             <p>Completed</p>
         </div>
         <div class="stat-card">
-            <div class="stat-icon">⏳</div>
+            <div class="stat-icon"><i class="fas fa-spinner"></i></div>
             <h3 id="analyzingSessions">0</h3>
             <p>Analyzing</p>
         </div>
         <div class="stat-card">
-            <div class="stat-icon">❌</div>
+            <div class="stat-icon"><i class="fas fa-exclamation-triangle"></i></div>
             <h3 id="errorSessions">0</h3>
             <p>Errors</p>
         </div>
     </div>
 
     <div class="recent-sessions">
-        <h3>Recent Sessions</h3>
+        <h3><i class="fas fa-clock"></i> Recent Sessions</h3>
         <div id="recentSessionsList">
-            <p>Loading...</p>
+            <div class="loading">
+                <i class="fas fa-circle-notch fa-spin"></i>
+                <p>Loading sessions...</p>
+            </div>
         </div>
     </div>
 </div>
@@ -63,7 +172,13 @@ async function loadRecentSessions() {
         const container = document.getElementById('recentSessionsList');
 
         if (sessions.length === 0) {
-            container.innerHTML = '<p>No sessions found.</p>';
+            container.innerHTML = `
+                <div class="empty-state">
+                    <i class="fas fa-inbox"></i>
+                    <p>No sessions found.</p>
+                    <a href="/" class="btn btn-primary"><i class="fas fa-upload"></i> Upload a File</a>
+                </div>
+            `;
             return;
         }
 
@@ -71,10 +186,10 @@ async function loadRecentSessions() {
             <table class="sessions-table">
                 <thead>
                     <tr>
-                        <th>Filename</th>
-                        <th>Status</th>
-                        <th>Created</th>
-                        <th>Actions</th>
+                        <th><i class="fas fa-file"></i> Filename</th>
+                        <th><i class="fas fa-info-circle"></i> Status</th>
+                        <th><i class="fas fa-calendar"></i> Created</th>
+                        <th><i class="fas fa-cogs"></i> Actions</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -84,7 +199,9 @@ async function loadRecentSessions() {
                             <td><span class="status-badge status-${session.status}">${session.status}</span></td>
                             <td>${new Date(session.created_at).toLocaleString()}</td>
                             <td>
-                                <a href="/session/${session.session_id}" class="btn btn-small">View</a>
+                                <a href="/session/${session.session_id}" class="btn btn-small btn-primary">
+                                    <i class="fas fa-eye"></i> View
+                                </a>
                             </td>
                         </tr>
                     `).join('')}

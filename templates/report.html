@@ -1,48 +1,62 @@
 <!DOCTYPE html>
-<html lang="de">
+<html lang="de" data-theme="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Analysis Report - {{ session_id }}</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
             line-height: 1.6;
-            color: #333;
-            background: #f5f5f5;
+            color: #cbd5e1;
+            background: linear-gradient(135deg, #0d2439 0%, #082a41 100%);
             padding: 20px;
+            min-height: 100vh;
         }
         .report-container {
             max-width: 1200px;
             margin: 0 auto;
-            background: white;
+            background: #0a2d47;
             padding: 40px;
-            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.4);
+            border-radius: 12px;
+            border: 1px solid #0f3654;
         }
         .report-header {
-            border-bottom: 3px solid #667eea;
+            border-bottom: 3px solid #00baf5;
             padding-bottom: 20px;
             margin-bottom: 30px;
         }
         .report-header h1 {
-            color: #667eea;
+            color: #00baf5;
             font-size: 32px;
             margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .report-header p {
+            color: #7b8795;
         }
         .report-section {
             margin-bottom: 30px;
-            padding: 20px;
-            background: #f9f9f9;
-            border-left: 4px solid #667eea;
+            padding: 25px;
+            background: #052440;
+            border-left: 4px solid #00baf5;
+            border-radius: 8px;
         }
         .report-section h2 {
-            color: #667eea;
+            color: #00baf5;
             margin-bottom: 15px;
             font-size: 24px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
         }
         .report-section h3 {
-            color: #444;
+            color: #fff;
             margin: 15px 0 10px 0;
             font-size: 18px;
         }
@@ -50,19 +64,24 @@
             width: 100%;
             border-collapse: collapse;
             margin: 15px 0;
+            background: #0a2d47;
+            border-radius: 8px;
+            overflow: hidden;
         }
         table th {
-            background: #667eea;
-            color: white;
-            padding: 10px;
+            background: #00baf5;
+            color: #0d2439;
+            padding: 12px;
             text-align: left;
+            font-weight: 600;
         }
         table td {
-            padding: 10px;
-            border-bottom: 1px solid #ddd;
+            padding: 12px;
+            border-bottom: 1px solid #0f3654;
+            color: #cbd5e1;
         }
         table tr:hover {
-            background: #f5f5f5;
+            background: #082a41;
         }
         .threat-score {
             font-size: 48px;
@@ -71,55 +90,84 @@
             padding: 20px;
             margin: 20px 0;
         }
-        .threat-critical { color: #e74c3c; }
-        .threat-high { color: #e67e22; }
-        .threat-medium { color: #f39c12; }
-        .threat-low { color: #27ae60; }
+        .threat-critical { color: #ef4444; }
+        .threat-high { color: #f58580; }
+        .threat-medium { color: #f59e0b; }
+        .threat-low { color: #10b981; }
         .badge {
             display: inline-block;
             padding: 5px 10px;
-            border-radius: 3px;
+            border-radius: 12px;
             font-size: 12px;
             font-weight: bold;
             color: white;
         }
-        .badge-critical { background: #e74c3c; }
-        .badge-high { background: #e67e22; }
-        .badge-medium { background: #f39c12; }
-        .badge-low { background: #27ae60; }
+        .badge-critical { background: #ef4444; }
+        .badge-high { background: #f58580; }
+        .badge-medium { background: #f59e0b; }
+        .badge-low { background: #10b981; }
         code {
-            background: #f0f0f0;
-            padding: 2px 6px;
-            border-radius: 3px;
+            background: #0d2439;
+            padding: 3px 8px;
+            border-radius: 4px;
             font-family: 'Courier New', monospace;
             font-size: 13px;
+            color: #00baf5;
         }
         .print-btn {
-            background: #667eea;
-            color: white;
-            padding: 10px 20px;
+            background: #00baf5;
+            color: #0d2439;
+            padding: 12px 24px;
             border: none;
-            border-radius: 5px;
+            border-radius: 6px;
             cursor: pointer;
             font-size: 16px;
+            font-weight: 600;
             margin: 20px 0;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s;
         }
         .print-btn:hover {
-            background: #5568d3;
+            background: #42d2ff;
+            transform: translateY(-2px);
         }
         @media print {
             .print-btn { display: none; }
-            .report-container { box-shadow: none; }
+            .report-container {
+                box-shadow: none;
+                border: none;
+                background: white;
+            }
+            body {
+                background: white;
+                color: #333;
+            }
+            .report-section {
+                background: #f9f9f9;
+            }
+            table {
+                background: white;
+            }
+            table th {
+                background: #00baf5;
+            }
+            code {
+                background: #f0f0f0;
+                color: #333;
+            }
         }
         .ioc-list {
             list-style: none;
             padding: 0;
         }
         .ioc-list li {
-            padding: 8px;
-            margin: 5px 0;
-            background: white;
-            border-radius: 3px;
+            padding: 10px;
+            margin: 8px 0;
+            background: #0a2d47;
+            border-radius: 6px;
+            border-left: 3px solid #00baf5;
         }
         .summary-grid {
             display: grid;
@@ -128,30 +176,38 @@
             margin: 20px 0;
         }
         .summary-card {
-            background: white;
-            padding: 15px;
-            border-radius: 5px;
+            background: #0a2d47;
+            padding: 20px;
+            border-radius: 8px;
             text-align: center;
+            border: 1px solid #0f3654;
         }
         .summary-card h3 {
-            font-size: 32px;
-            color: #667eea;
+            font-size: 36px;
+            color: #00baf5;
             margin: 10px 0;
+        }
+        .summary-card p {
+            color: #7b8795;
+            margin: 0;
         }
     </style>
 </head>
 <body>
     <div class="report-container">
         <div class="report-header">
-            <h1>🔒 Malware Analysis Report</h1>
-            <p><strong>Session ID:</strong> <code>{{ session_id }}</code></p>
-            <p><strong>Generated:</strong> {{ now().strftime('%Y-%m-%d %H:%M:%S') }}</p>
+            <h1><i class="fas fa-shield-virus"></i> Malware Analysis Report</h1>
+            <p><strong><i class="fas fa-fingerprint"></i> Session ID:</strong> <code>{{ session_id }}</code></p>
+            <p><strong><i class="fas fa-calendar"></i> Generated:</strong> {{ now().strftime('%Y-%m-%d %H:%M:%S') }}</p>
         </div>
 
-        <button class="print-btn" onclick="window.print()">Print Report</button>
+        <button class="print-btn" onclick="window.print()"><i class="fas fa-print"></i> Print Report</button>
 
         <div id="report-content">
-            <p>Loading comprehensive analysis report...</p>
+            <div style="text-align: center; padding: 40px;">
+                <i class="fas fa-spinner fa-spin" style="font-size: 48px; color: #00baf5;"></i>
+                <p style="margin-top: 15px;">Loading comprehensive analysis report...</p>
+            </div>
         </div>
     </div>
 
@@ -164,13 +220,21 @@
                 const data = await response.json();
 
                 if (data.error) {
-                    document.getElementById('report-content').innerHTML = `<p>Error: ${data.error}</p>`;
+                    document.getElementById('report-content').innerHTML = `
+                        <div class="report-section">
+                            <p><i class="fas fa-exclamation-triangle"></i> Error: ${data.error}</p>
+                        </div>
+                    `;
                     return;
                 }
 
                 generateReport(data);
             } catch (error) {
-                document.getElementById('report-content').innerHTML = `<p>Error loading report: ${error}</p>`;
+                document.getElementById('report-content').innerHTML = `
+                    <div class="report-section">
+                        <p><i class="fas fa-exclamation-triangle"></i> Error loading report: ${error}</p>
+                    </div>
+                `;
             }
         }
 
@@ -182,44 +246,44 @@
 
             const html = `
                 <div class="report-section">
-                    <h2>Executive Summary</h2>
+                    <h2><i class="fas fa-chart-pie"></i> Executive Summary</h2>
                     <div class="threat-score ${threatClass}">
-                        Threat Score: ${data.threat_score}/100
+                        <i class="fas fa-shield-alt"></i> Threat Score: ${data.threat_score}/100
                     </div>
                     <div class="summary-grid">
                         <div class="summary-card">
-                            <p>Behavioral Events</p>
+                            <p><i class="fas fa-bug"></i> Behavioral Events</p>
                             <h3>${data.behaviors.length}</h3>
                         </div>
                         <div class="summary-card">
-                            <p>Network Events</p>
+                            <p><i class="fas fa-network-wired"></i> Network Events</p>
                             <h3>${data.network_events.length}</h3>
                         </div>
                         <div class="summary-card">
-                            <p>IOCs Found</p>
+                            <p><i class="fas fa-fingerprint"></i> IOCs Found</p>
                             <h3>${data.iocs.length}</h3>
                         </div>
                         <div class="summary-card">
-                            <p>YARA Matches</p>
+                            <p><i class="fas fa-search"></i> YARA Matches</p>
                             <h3>${data.yara_matches.length}</h3>
                         </div>
                     </div>
                 </div>
 
                 <div class="report-section">
-                    <h2>File Information</h2>
+                    <h2><i class="fas fa-file-alt"></i> File Information</h2>
                     <table>
-                        <tr><td><strong>Filename</strong></td><td>${session.filename}</td></tr>
-                        <tr><td><strong>SHA256</strong></td><td><code>${session.file_hash}</code></td></tr>
-                        <tr><td><strong>File Size</strong></td><td>${formatFileSize(session.file_size)}</td></tr>
-                        <tr><td><strong>File Type</strong></td><td>${session.file_type}</td></tr>
-                        <tr><td><strong>Analysis Date</strong></td><td>${new Date(session.created_at).toLocaleString()}</td></tr>
+                        <tr><td><strong><i class="fas fa-file"></i> Filename</strong></td><td>${session.filename}</td></tr>
+                        <tr><td><strong><i class="fas fa-fingerprint"></i> SHA256</strong></td><td><code>${session.file_hash}</code></td></tr>
+                        <tr><td><strong><i class="fas fa-weight"></i> File Size</strong></td><td>${formatFileSize(session.file_size)}</td></tr>
+                        <tr><td><strong><i class="fas fa-file-code"></i> File Type</strong></td><td>${session.file_type}</td></tr>
+                        <tr><td><strong><i class="fas fa-calendar"></i> Analysis Date</strong></td><td>${new Date(session.created_at).toLocaleString()}</td></tr>
                     </table>
                 </div>
 
                 ${data.yara_matches.length > 0 ? `
                 <div class="report-section">
-                    <h2>YARA Rule Matches</h2>
+                    <h2><i class="fas fa-search"></i> YARA Rule Matches</h2>
                     <table>
                         <tr>
                             <th>Rule Name</th>
@@ -241,7 +305,7 @@
 
                 ${data.mitre_attacks.length > 0 ? `
                 <div class="report-section">
-                    <h2>MITRE ATT&CK Techniques</h2>
+                    <h2><i class="fas fa-crosshairs"></i> MITRE ATT&CK Techniques</h2>
                     <table>
                         <tr>
                             <th>Technique ID</th>
@@ -263,31 +327,31 @@
 
                 ${data.iocs.length > 0 ? `
                 <div class="report-section">
-                    <h2>Indicators of Compromise (IOCs)</h2>
-                    <h3>Domains</h3>
+                    <h2><i class="fas fa-fingerprint"></i> Indicators of Compromise (IOCs)</h2>
+                    <h3><i class="fas fa-globe"></i> Domains</h3>
                     <ul class="ioc-list">
                         ${data.iocs.filter(i => i.ioc_type === 'domain').map(i =>
                             `<li><code>${i.value}</code> - ${i.description}</li>`
-                        ).join('') || '<li>None found</li>'}
+                        ).join('') || '<li><i class="fas fa-check"></i> None found</li>'}
                     </ul>
-                    <h3>IP Addresses</h3>
+                    <h3><i class="fas fa-server"></i> IP Addresses</h3>
                     <ul class="ioc-list">
                         ${data.iocs.filter(i => i.ioc_type === 'ip').map(i =>
                             `<li><code>${i.value}</code> - ${i.description}</li>`
-                        ).join('') || '<li>None found</li>'}
+                        ).join('') || '<li><i class="fas fa-check"></i> None found</li>'}
                     </ul>
-                    <h3>URLs</h3>
+                    <h3><i class="fas fa-link"></i> URLs</h3>
                     <ul class="ioc-list">
                         ${data.iocs.filter(i => i.ioc_type === 'url').map(i =>
                             `<li><code>${i.value}</code> - ${i.description}</li>`
-                        ).join('') || '<li>None found</li>'}
+                        ).join('') || '<li><i class="fas fa-check"></i> None found</li>'}
                     </ul>
                 </div>
                 ` : ''}
 
                 ${data.processes.length > 0 ? `
                 <div class="report-section">
-                    <h2>Process Activity</h2>
+                    <h2><i class="fas fa-microchip"></i> Process Activity</h2>
                     <table>
                         <tr>
                             <th>PID</th>
@@ -309,7 +373,7 @@
 
                 ${data.network_events.length > 0 ? `
                 <div class="report-section">
-                    <h2>Network Activity</h2>
+                    <h2><i class="fas fa-network-wired"></i> Network Activity</h2>
                     <table>
                         <tr>
                             <th>Protocol</th>
@@ -329,7 +393,7 @@
 
                 ${data.dropped_files.length > 0 ? `
                 <div class="report-section">
-                    <h2>Dropped Files</h2>
+                    <h2><i class="fas fa-file-download"></i> Dropped Files</h2>
                     <table>
                         <tr>
                             <th>Filename</th>
@@ -342,7 +406,7 @@
                                 <td><strong>${f.file_name}</strong></td>
                                 <td><code>${f.file_path}</code></td>
                                 <td>${formatFileSize(f.file_size)}</td>
-                                <td>${f.is_malicious ? '<span class="badge badge-critical">YES</span>' : 'No'}</td>
+                                <td>${f.is_malicious ? '<span class="badge badge-critical">YES</span>' : '<i class="fas fa-check" style="color: #10b981;"></i> No'}</td>
                             </tr>
                         `).join('')}
                     </table>
@@ -350,7 +414,7 @@
                 ` : ''}
 
                 <div class="report-section">
-                    <h2>Behavioral Events</h2>
+                    <h2><i class="fas fa-bug"></i> Behavioral Events</h2>
                     <table>
                         <tr>
                             <th>Type</th>
@@ -368,12 +432,16 @@
                 </div>
 
                 <div class="report-section">
-                    <h2>Conclusion</h2>
-                    <p><strong>Analysis Status:</strong> ${session.status}</p>
-                    <p><strong>Overall Risk Assessment:</strong> ${threatClass.replace('threat-', '').toUpperCase()}</p>
-                    <p>This report contains a comprehensive analysis of the submitted file.
-                    The threat score is calculated based on behavioral patterns, network activity,
-                    and matched detection rules. Further manual analysis is recommended for critical threats.</p>
+                    <h2><i class="fas fa-flag-checkered"></i> Conclusion</h2>
+                    <p><strong><i class="fas fa-info-circle"></i> Analysis Status:</strong> ${session.status}</p>
+                    <p><strong><i class="fas fa-exclamation-triangle"></i> Overall Risk Assessment:</strong>
+                        <span class="${threatClass}">${threatClass.replace('threat-', '').toUpperCase()}</span>
+                    </p>
+                    <p style="margin-top: 15px;">
+                        This report contains a comprehensive analysis of the submitted file.
+                        The threat score is calculated based on behavioral patterns, network activity,
+                        and matched detection rules. Further manual analysis is recommended for critical threats.
+                    </p>
                 </div>
             `;
 

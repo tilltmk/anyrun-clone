@@ -2,59 +2,320 @@
 
 {% block title %}Advanced Analysis - AnyRun Clone{% endblock %}
 
+{% block extra_css %}
+<style>
+    .session-header {
+        margin-bottom: 30px;
+    }
+
+    .header-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 15px;
+    }
+
+    .session-header h2 {
+        color: #00baf5;
+        font-size: 2em;
+        margin-bottom: 10px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .session-id {
+        color: #7b8795;
+    }
+
+    .header-actions {
+        display: flex;
+        gap: 10px;
+    }
+
+    .analysis-grid {
+        display: grid;
+        grid-template-columns: 350px 1fr;
+        gap: 25px;
+    }
+
+    .info-section {
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+    }
+
+    .info-card {
+        background: #0a2d47;
+        padding: 20px;
+        border-radius: 12px;
+        border: 1px solid #0f3654;
+    }
+
+    .info-card h3 {
+        color: #00baf5;
+        margin-bottom: 15px;
+        font-size: 1.1em;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .threat-score-card {
+        background: #0a2d47;
+        padding: 20px;
+        border-radius: 12px;
+        border: 1px solid #0f3654;
+    }
+
+    .threat-score-card h3 {
+        color: #00baf5;
+        margin-bottom: 15px;
+        font-size: 1.1em;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .threat-meter {
+        text-align: center;
+    }
+
+    .threat-bar {
+        height: 15px;
+        background: #052440;
+        border-radius: 8px;
+        overflow: hidden;
+        margin-bottom: 10px;
+    }
+
+    .threat-fill {
+        height: 100%;
+        border-radius: 8px;
+        transition: width 0.5s;
+    }
+
+    .threat-low { background: #10b981; }
+    .threat-medium { background: #f59e0b; }
+    .threat-high { background: #f58580; }
+    .threat-critical { background: #ef4444; }
+
+    .threat-label {
+        color: #cbd5e1;
+        font-size: 1.1em;
+    }
+
+    .stats-cards {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 15px;
+    }
+
+    .mini-stat-card {
+        background: #052440;
+        padding: 15px;
+        border-radius: 8px;
+        text-align: center;
+        border: 1px solid #0f3654;
+    }
+
+    .mini-stat-card h4 {
+        font-size: 28px;
+        color: #00baf5;
+        margin: 0 0 5px 0;
+    }
+
+    .mini-stat-card p {
+        color: #7b8795;
+        margin: 0;
+        font-size: 0.9em;
+    }
+
+    .analysis-main {
+        background: #0a2d47;
+        border-radius: 12px;
+        padding: 20px;
+        border: 1px solid #0f3654;
+    }
+
+    .analysis-tabs-advanced {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .tabs-scrollable {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-bottom: 20px;
+        padding-bottom: 15px;
+        border-bottom: 2px solid #0f3654;
+    }
+
+    .tab-btn {
+        background: transparent;
+        border: none;
+        color: #7b8795;
+        padding: 10px 15px;
+        cursor: pointer;
+        font-size: 0.9em;
+        font-weight: 600;
+        border-radius: 6px;
+        transition: all 0.3s;
+    }
+
+    .tab-btn:hover {
+        color: #fff;
+        background: #052440;
+    }
+
+    .tab-btn.active {
+        background: #00baf5;
+        color: #0d2439;
+    }
+
+    .tab-content-area {
+        min-height: 400px;
+    }
+
+    .tab-panel {
+        display: none;
+    }
+
+    .tab-panel.active {
+        display: block;
+    }
+
+    .tab-panel h3 {
+        color: #00baf5;
+        margin-bottom: 20px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .ioc-filter, .strings-filter {
+        display: flex;
+        gap: 8px;
+        margin-bottom: 15px;
+    }
+
+    .filter-btn {
+        background: #052440;
+        border: 1px solid #0f3654;
+        color: #7b8795;
+        padding: 8px 12px;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 0.85em;
+        transition: all 0.3s;
+    }
+
+    .filter-btn:hover {
+        color: #fff;
+        border-color: #00baf5;
+    }
+
+    .filter-btn.active {
+        background: #00baf5;
+        color: #0d2439;
+        border-color: #00baf5;
+    }
+
+    .screenshots-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        gap: 15px;
+    }
+
+    .timeline-container {
+        background: #052440;
+        padding: 15px;
+        border-radius: 8px;
+        min-height: 300px;
+    }
+
+    @media (max-width: 1024px) {
+        .analysis-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .info-section {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+        }
+    }
+
+    @media (max-width: 768px) {
+        .info-section {
+            grid-template-columns: 1fr;
+        }
+
+        .header-row {
+            flex-direction: column;
+            gap: 15px;
+        }
+    }
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="container">
     <div class="session-header">
         <div class="header-row">
             <div>
-                <h2>Advanced Analysis Session</h2>
-                <p class="session-id">Session ID: <code>{{ session_id }}</code></p>
+                <h2><i class="fas fa-microscope"></i> Advanced Analysis Session</h2>
+                <p class="session-id"><i class="fas fa-fingerprint"></i> Session ID: <code>{{ session_id }}</code></p>
             </div>
             <div class="header-actions">
-                <a href="/api/session/{{ session_id }}/export/json" class="btn btn-small" download>Export JSON</a>
-                <a href="/session/{{ session_id }}/report" class="btn btn-small btn-primary">Full Report</a>
+                <a href="/api/session/{{ session_id }}/export/json" class="btn btn-small btn-outline" download>
+                    <i class="fas fa-download"></i> Export JSON
+                </a>
+                <a href="/session/{{ session_id }}/report" class="btn btn-small btn-primary">
+                    <i class="fas fa-file-alt"></i> Full Report
+                </a>
             </div>
         </div>
         <div class="status-indicator" id="statusIndicator">
-            <span class="status-badge" id="statusBadge">Loading...</span>
+            <span class="status-badge" id="statusBadge"><i class="fas fa-spinner fa-spin"></i> Loading...</span>
         </div>
     </div>
 
     <div class="analysis-grid">
         <div class="info-section">
             <div class="info-card">
-                <h3>File Information</h3>
+                <h3><i class="fas fa-file-alt"></i> File Information</h3>
                 <div id="fileDetails">
-                    <p>Loading file details...</p>
+                    <p><i class="fas fa-spinner fa-spin"></i> Loading file details...</p>
                 </div>
             </div>
 
             <div class="threat-score-card" id="threatScoreCard" style="display: none;">
-                <h3>Threat Assessment</h3>
+                <h3><i class="fas fa-shield-alt"></i> Threat Assessment</h3>
                 <div class="threat-meter">
                     <div class="threat-bar">
                         <div class="threat-fill" id="threatFill"></div>
                     </div>
-                    <p class="threat-label" id="threatLabel">Calculating...</p>
+                    <p class="threat-label" id="threatLabel"><i class="fas fa-calculator"></i> Calculating...</p>
                 </div>
             </div>
 
             <div class="stats-cards">
                 <div class="mini-stat-card">
                     <h4 id="behaviorCount">0</h4>
-                    <p>Behaviors</p>
+                    <p><i class="fas fa-bug"></i> Behaviors</p>
                 </div>
                 <div class="mini-stat-card">
                     <h4 id="networkCount">0</h4>
-                    <p>Network Events</p>
+                    <p><i class="fas fa-network-wired"></i> Network Events</p>
                 </div>
                 <div class="mini-stat-card">
                     <h4 id="processCount">0</h4>
-                    <p>Processes</p>
+                    <p><i class="fas fa-microchip"></i> Processes</p>
                 </div>
                 <div class="mini-stat-card">
                     <h4 id="iocCount">0</h4>
-                    <p>IOCs</p>
+                    <p><i class="fas fa-fingerprint"></i> IOCs</p>
                 </div>
             </div>
         </div>
@@ -62,58 +323,58 @@
         <div class="analysis-main">
             <div class="analysis-tabs-advanced">
                 <div class="tabs-scrollable">
-                    <button class="tab-btn active" data-tab="overview">Overview</button>
-                    <button class="tab-btn" data-tab="behavior">Behavior</button>
-                    <button class="tab-btn" data-tab="network">Network</button>
-                    <button class="tab-btn" data-tab="processes">Processes</button>
-                    <button class="tab-btn" data-tab="dropped">Dropped Files</button>
-                    <button class="tab-btn" data-tab="iocs">IOCs</button>
-                    <button class="tab-btn" data-tab="mitre">MITRE ATT&CK</button>
-                    <button class="tab-btn" data-tab="strings">Strings</button>
-                    <button class="tab-btn" data-tab="mutexes">Mutexes</button>
-                    <button class="tab-btn" data-tab="memory">Memory</button>
-                    <button class="tab-btn" data-tab="screenshots">Screenshots</button>
-                    <button class="tab-btn" data-tab="yara">YARA</button>
-                    <button class="tab-btn" data-tab="timeline">Timeline</button>
-                    <button class="tab-btn" data-tab="certificates">Certificates</button>
+                    <button class="tab-btn active" data-tab="overview"><i class="fas fa-list"></i> Overview</button>
+                    <button class="tab-btn" data-tab="behavior"><i class="fas fa-bug"></i> Behavior</button>
+                    <button class="tab-btn" data-tab="network"><i class="fas fa-network-wired"></i> Network</button>
+                    <button class="tab-btn" data-tab="processes"><i class="fas fa-microchip"></i> Processes</button>
+                    <button class="tab-btn" data-tab="dropped"><i class="fas fa-file-download"></i> Dropped Files</button>
+                    <button class="tab-btn" data-tab="iocs"><i class="fas fa-fingerprint"></i> IOCs</button>
+                    <button class="tab-btn" data-tab="mitre"><i class="fas fa-crosshairs"></i> MITRE ATT&CK</button>
+                    <button class="tab-btn" data-tab="strings"><i class="fas fa-font"></i> Strings</button>
+                    <button class="tab-btn" data-tab="mutexes"><i class="fas fa-lock"></i> Mutexes</button>
+                    <button class="tab-btn" data-tab="memory"><i class="fas fa-memory"></i> Memory</button>
+                    <button class="tab-btn" data-tab="screenshots"><i class="fas fa-camera"></i> Screenshots</button>
+                    <button class="tab-btn" data-tab="yara"><i class="fas fa-search"></i> YARA</button>
+                    <button class="tab-btn" data-tab="timeline"><i class="fas fa-clock"></i> Timeline</button>
+                    <button class="tab-btn" data-tab="certificates"><i class="fas fa-certificate"></i> Certificates</button>
                 </div>
 
                 <div class="tab-content-area">
                     <!-- Overview Panel -->
                     <div class="tab-panel active" id="overview-panel">
-                        <h3>Analysis Overview</h3>
+                        <h3><i class="fas fa-chart-pie"></i> Analysis Overview</h3>
                         <div id="overviewContent">
-                            <p>Waiting for analysis to complete...</p>
+                            <p><i class="fas fa-hourglass-half"></i> Waiting for analysis to complete...</p>
                         </div>
                     </div>
 
                     <!-- Behavior Panel -->
                     <div class="tab-panel" id="behavior-panel">
-                        <h3>Behavioral Events</h3>
+                        <h3><i class="fas fa-bug"></i> Behavioral Events</h3>
                         <div id="behaviorEvents"></div>
                     </div>
 
                     <!-- Network Panel -->
                     <div class="tab-panel" id="network-panel">
-                        <h3>Network Activity</h3>
+                        <h3><i class="fas fa-network-wired"></i> Network Activity</h3>
                         <div id="networkEvents"></div>
                     </div>
 
                     <!-- Processes Panel -->
                     <div class="tab-panel" id="processes-panel">
-                        <h3>Process Tree</h3>
+                        <h3><i class="fas fa-sitemap"></i> Process Tree</h3>
                         <div id="processTree"></div>
                     </div>
 
                     <!-- Dropped Files Panel -->
                     <div class="tab-panel" id="dropped-panel">
-                        <h3>Dropped Files</h3>
+                        <h3><i class="fas fa-file-download"></i> Dropped Files</h3>
                         <div id="droppedFiles"></div>
                     </div>
 
                     <!-- IOCs Panel -->
                     <div class="tab-panel" id="iocs-panel">
-                        <h3>Indicators of Compromise</h3>
+                        <h3><i class="fas fa-fingerprint"></i> Indicators of Compromise</h3>
                         <div class="ioc-filter">
                             <button class="filter-btn active" data-filter="all">All</button>
                             <button class="filter-btn" data-filter="ip">IPs</button>
@@ -126,13 +387,13 @@
 
                     <!-- MITRE Panel -->
                     <div class="tab-panel" id="mitre-panel">
-                        <h3>MITRE ATT&CK Framework</h3>
+                        <h3><i class="fas fa-crosshairs"></i> MITRE ATT&CK Framework</h3>
                         <div id="mitreList"></div>
                     </div>
 
                     <!-- Strings Panel -->
                     <div class="tab-panel" id="strings-panel">
-                        <h3>Extracted Strings</h3>
+                        <h3><i class="fas fa-font"></i> Extracted Strings</h3>
                         <div class="strings-filter">
                             <button class="filter-btn active" data-filter="all">All</button>
                             <button class="filter-btn" data-filter="url">URLs</button>
@@ -146,37 +407,37 @@
 
                     <!-- Mutexes Panel -->
                     <div class="tab-panel" id="mutexes-panel">
-                        <h3>Mutexes & Handles</h3>
+                        <h3><i class="fas fa-lock"></i> Mutexes & Handles</h3>
                         <div id="mutexesList"></div>
                     </div>
 
                     <!-- Memory Panel -->
                     <div class="tab-panel" id="memory-panel">
-                        <h3>Memory Regions</h3>
+                        <h3><i class="fas fa-memory"></i> Memory Regions</h3>
                         <div id="memoryList"></div>
                     </div>
 
                     <!-- Screenshots Panel -->
                     <div class="tab-panel" id="screenshots-panel">
-                        <h3>Sandbox Screenshots</h3>
+                        <h3><i class="fas fa-camera"></i> Sandbox Screenshots</h3>
                         <div id="screenshotsList" class="screenshots-grid"></div>
                     </div>
 
                     <!-- YARA Panel -->
                     <div class="tab-panel" id="yara-panel">
-                        <h3>YARA Rule Matches</h3>
+                        <h3><i class="fas fa-search"></i> YARA Rule Matches</h3>
                         <div id="yaraList"></div>
                     </div>
 
                     <!-- Timeline Panel -->
                     <div class="tab-panel" id="timeline-panel">
-                        <h3>Complete Timeline</h3>
+                        <h3><i class="fas fa-clock"></i> Complete Timeline</h3>
                         <div id="timelineView" class="timeline-container"></div>
                     </div>
 
                     <!-- Certificates Panel -->
                     <div class="tab-panel" id="certificates-panel">
-                        <h3>Code Signing Certificates</h3>
+                        <h3><i class="fas fa-certificate"></i> Code Signing Certificates</h3>
                         <div id="certificatesList"></div>
                     </div>
                 </div>
@@ -245,7 +506,7 @@ async function loadAllData() {
 
         if (data.session.status === 'completed') {
             clearInterval(pollInterval);
-            document.getElementById('statusBadge').textContent = 'Completed';
+            document.getElementById('statusBadge').innerHTML = '<i class="fas fa-check-circle"></i> Completed';
             document.getElementById('statusBadge').className = 'status-badge status-completed';
         }
 

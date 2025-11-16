@@ -2,61 +2,291 @@
 
 {% block title %}Session Analysis - AnyRun Clone{% endblock %}
 
+{% block extra_css %}
+<style>
+    .session-header {
+        margin-bottom: 30px;
+    }
+
+    .session-header h2 {
+        color: #00baf5;
+        font-size: 2em;
+        margin-bottom: 10px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .session-id {
+        color: #7b8795;
+        font-size: 1em;
+    }
+
+    .status-indicator {
+        margin-top: 15px;
+    }
+
+    .session-info {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 25px;
+        margin-bottom: 30px;
+    }
+
+    .info-card {
+        background: #0a2d47;
+        padding: 25px;
+        border-radius: 12px;
+        border: 1px solid #0f3654;
+    }
+
+    .info-card h3 {
+        color: #00baf5;
+        margin-bottom: 20px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .info-table {
+        width: 100%;
+    }
+
+    .info-table td {
+        padding: 10px;
+        border-bottom: 1px solid #0f3654;
+    }
+
+    .info-table strong {
+        color: #cbd5e1;
+    }
+
+    .threat-score-card {
+        background: #0a2d47;
+        padding: 25px;
+        border-radius: 12px;
+        border: 1px solid #0f3654;
+    }
+
+    .threat-score-card h3 {
+        color: #00baf5;
+        margin-bottom: 20px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .threat-meter {
+        text-align: center;
+    }
+
+    .threat-bar {
+        height: 20px;
+        background: #052440;
+        border-radius: 10px;
+        overflow: hidden;
+        margin-bottom: 15px;
+    }
+
+    .threat-fill {
+        height: 100%;
+        border-radius: 10px;
+        transition: width 0.5s;
+    }
+
+    .threat-low { background: #10b981; }
+    .threat-medium { background: #f59e0b; }
+    .threat-high { background: #f58580; }
+    .threat-critical { background: #ef4444; }
+
+    .threat-label {
+        color: #cbd5e1;
+        font-size: 1.2em;
+    }
+
+    .analysis-tabs {
+        background: #0a2d47;
+        border-radius: 12px;
+        padding: 25px;
+        border: 1px solid #0f3654;
+    }
+
+    .tabs {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 25px;
+        border-bottom: 2px solid #0f3654;
+        padding-bottom: 15px;
+    }
+
+    .tab-btn {
+        background: transparent;
+        border: none;
+        color: #7b8795;
+        padding: 12px 20px;
+        cursor: pointer;
+        font-size: 1em;
+        font-weight: 600;
+        border-radius: 6px;
+        transition: all 0.3s;
+    }
+
+    .tab-btn:hover {
+        color: #fff;
+        background: #052440;
+    }
+
+    .tab-btn.active {
+        background: #00baf5;
+        color: #0d2439;
+    }
+
+    .tab-panel {
+        display: none;
+    }
+
+    .tab-panel.active {
+        display: block;
+    }
+
+    .tab-panel h3 {
+        color: #00baf5;
+        margin-bottom: 20px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .event-item {
+        background: #052440;
+        padding: 15px;
+        border-radius: 8px;
+        margin-bottom: 15px;
+        border-left: 4px solid #0f3654;
+    }
+
+    .event-item.severity-critical { border-left-color: #ef4444; }
+    .event-item.severity-high { border-left-color: #f58580; }
+    .event-item.severity-medium { border-left-color: #f59e0b; }
+    .event-item.severity-low { border-left-color: #10b981; }
+
+    .event-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 10px;
+    }
+
+    .event-type {
+        color: #00baf5;
+        font-weight: 600;
+    }
+
+    .severity-badge {
+        padding: 4px 10px;
+        border-radius: 12px;
+        font-size: 0.8em;
+        font-weight: 600;
+    }
+
+    .severity-critical { background: #ef4444; color: white; }
+    .severity-high { background: #f58580; color: white; }
+    .severity-medium { background: #f59e0b; color: white; }
+    .severity-low { background: #10b981; color: white; }
+
+    .event-description {
+        color: #cbd5e1;
+        margin-bottom: 8px;
+    }
+
+    .event-time {
+        color: #7b8795;
+        font-size: 0.85em;
+    }
+
+    .network-event .protocol-badge {
+        background: #00baf5;
+        color: #0d2439;
+        padding: 3px 8px;
+        border-radius: 10px;
+        font-size: 0.8em;
+        font-weight: 600;
+    }
+
+    .network-event .domain {
+        color: #f59e0b;
+        margin-left: 10px;
+        font-weight: 500;
+    }
+
+    .network-event p {
+        color: #cbd5e1;
+        margin: 5px 0;
+    }
+
+    @media (max-width: 768px) {
+        .session-info {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="container">
     <div class="session-header">
-        <h2>Analysis Session</h2>
-        <p class="session-id">Session ID: <code>{{ session_id }}</code></p>
+        <h2><i class="fas fa-microscope"></i> Analysis Session</h2>
+        <p class="session-id"><i class="fas fa-fingerprint"></i> Session ID: <code>{{ session_id }}</code></p>
         <div class="status-indicator" id="statusIndicator">
-            <span class="status-badge" id="statusBadge">Loading...</span>
+            <span class="status-badge" id="statusBadge"><i class="fas fa-spinner fa-spin"></i> Loading...</span>
         </div>
     </div>
 
     <div class="session-info" id="sessionInfo">
         <div class="info-card">
-            <h3>File Information</h3>
+            <h3><i class="fas fa-file-alt"></i> File Information</h3>
             <div id="fileDetails">
-                <p>Loading file details...</p>
+                <p><i class="fas fa-spinner fa-spin"></i> Loading file details...</p>
             </div>
         </div>
 
         <div class="threat-score-card" id="threatScoreCard" style="display: none;">
-            <h3>Threat Assessment</h3>
+            <h3><i class="fas fa-shield-alt"></i> Threat Assessment</h3>
             <div class="threat-meter">
                 <div class="threat-bar">
                     <div class="threat-fill" id="threatFill"></div>
                 </div>
-                <p class="threat-label" id="threatLabel">Calculating...</p>
+                <p class="threat-label" id="threatLabel"><i class="fas fa-calculator"></i> Calculating...</p>
             </div>
         </div>
     </div>
 
     <div class="analysis-tabs">
         <div class="tabs">
-            <button class="tab-btn active" data-tab="overview">Overview</button>
-            <button class="tab-btn" data-tab="behavior">Behavior</button>
-            <button class="tab-btn" data-tab="network">Network</button>
+            <button class="tab-btn active" data-tab="overview"><i class="fas fa-list"></i> Overview</button>
+            <button class="tab-btn" data-tab="behavior"><i class="fas fa-bug"></i> Behavior</button>
+            <button class="tab-btn" data-tab="network"><i class="fas fa-network-wired"></i> Network</button>
         </div>
 
         <div class="tab-content">
             <div class="tab-panel active" id="overview-panel">
-                <h3>Analysis Overview</h3>
+                <h3><i class="fas fa-chart-pie"></i> Analysis Overview</h3>
                 <div id="overviewContent">
-                    <p>Waiting for analysis to complete...</p>
+                    <p><i class="fas fa-hourglass-half"></i> Waiting for analysis to complete...</p>
                 </div>
             </div>
 
             <div class="tab-panel" id="behavior-panel">
-                <h3>Behavioral Events</h3>
+                <h3><i class="fas fa-bug"></i> Behavioral Events</h3>
                 <div id="behaviorEvents">
-                    <p>No events recorded yet...</p>
+                    <p><i class="fas fa-info-circle"></i> No events recorded yet...</p>
                 </div>
             </div>
 
             <div class="tab-panel" id="network-panel">
-                <h3>Network Activity</h3>
+                <h3><i class="fas fa-network-wired"></i> Network Activity</h3>
                 <div id="networkEvents">
-                    <p>No network activity recorded yet...</p>
+                    <p><i class="fas fa-info-circle"></i> No network activity recorded yet...</p>
                 </div>
             </div>
         </div>
@@ -98,7 +328,7 @@ async function loadSessionData() {
 
         if (data.session.status === 'completed') {
             clearInterval(pollInterval);
-            document.getElementById('statusBadge').textContent = 'Completed';
+            document.getElementById('statusBadge').innerHTML = '<i class="fas fa-check-circle"></i> Completed';
             document.getElementById('statusBadge').className = 'status-badge status-completed';
         }
     } catch (error) {
@@ -110,17 +340,17 @@ function updateSessionInfo(data) {
     const fileDetails = document.getElementById('fileDetails');
     fileDetails.innerHTML = `
         <table class="info-table">
-            <tr><td><strong>Filename:</strong></td><td>${data.session.filename}</td></tr>
-            <tr><td><strong>File Hash (SHA256):</strong></td><td><code>${data.session.file_hash}</code></td></tr>
-            <tr><td><strong>File Size:</strong></td><td>${formatFileSize(data.session.file_size)}</td></tr>
-            <tr><td><strong>File Type:</strong></td><td>${data.session.file_type}</td></tr>
-            <tr><td><strong>Status:</strong></td><td><span class="status-badge status-${data.session.status}">${data.session.status}</span></td></tr>
-            <tr><td><strong>Created:</strong></td><td>${formatDate(data.session.created_at)}</td></tr>
+            <tr><td><strong><i class="fas fa-file"></i> Filename:</strong></td><td>${data.session.filename}</td></tr>
+            <tr><td><strong><i class="fas fa-fingerprint"></i> File Hash (SHA256):</strong></td><td><code>${data.session.file_hash}</code></td></tr>
+            <tr><td><strong><i class="fas fa-weight"></i> File Size:</strong></td><td>${formatFileSize(data.session.file_size)}</td></tr>
+            <tr><td><strong><i class="fas fa-file-code"></i> File Type:</strong></td><td>${data.session.file_type}</td></tr>
+            <tr><td><strong><i class="fas fa-info-circle"></i> Status:</strong></td><td><span class="status-badge status-${data.session.status}">${data.session.status}</span></td></tr>
+            <tr><td><strong><i class="fas fa-calendar"></i> Created:</strong></td><td>${formatDate(data.session.created_at)}</td></tr>
         </table>
     `;
 
     if (data.session.status === 'analyzing') {
-        document.getElementById('statusBadge').textContent = 'Analyzing';
+        document.getElementById('statusBadge').innerHTML = '<i class="fas fa-spinner fa-spin"></i> Analyzing';
         document.getElementById('statusBadge').className = 'status-badge status-analyzing';
     }
 }
@@ -129,18 +359,18 @@ function updateBehaviors(behaviors) {
     const container = document.getElementById('behaviorEvents');
 
     if (!behaviors || behaviors.length === 0) {
-        container.innerHTML = '<p>No behavioral events recorded yet...</p>';
+        container.innerHTML = '<p><i class="fas fa-info-circle"></i> No behavioral events recorded yet...</p>';
         return;
     }
 
     container.innerHTML = behaviors.map(event => `
         <div class="event-item severity-${event.severity}">
             <div class="event-header">
-                <span class="event-type">${event.event_type}</span>
+                <span class="event-type"><i class="fas fa-exclamation-circle"></i> ${event.event_type}</span>
                 <span class="severity-badge severity-${event.severity}">${event.severity}</span>
             </div>
             <p class="event-description">${event.description}</p>
-            <p class="event-time">${formatDate(event.timestamp)}</p>
+            <p class="event-time"><i class="fas fa-clock"></i> ${formatDate(event.timestamp)}</p>
         </div>
     `).join('');
 }
@@ -149,7 +379,7 @@ function updateNetworkEvents(events) {
     const container = document.getElementById('networkEvents');
 
     if (!events || events.length === 0) {
-        container.innerHTML = '<p>No network activity recorded yet...</p>';
+        container.innerHTML = '<p><i class="fas fa-info-circle"></i> No network activity recorded yet...</p>';
         return;
     }
 
@@ -159,10 +389,10 @@ function updateNetworkEvents(events) {
                 <span class="protocol-badge">${event.protocol}</span>
                 ${event.domain ? `<span class="domain">${event.domain}</span>` : ''}
             </div>
-            <p><strong>Source:</strong> ${event.source_ip}</p>
-            <p><strong>Destination:</strong> ${event.destination_ip}:${event.destination_port || 'N/A'}</p>
-            ${event.url ? `<p><strong>URL:</strong> <code>${event.url}</code></p>` : ''}
-            <p class="event-time">${formatDate(event.timestamp)}</p>
+            <p><strong><i class="fas fa-arrow-right"></i> Source:</strong> ${event.source_ip}</p>
+            <p><strong><i class="fas fa-arrow-left"></i> Destination:</strong> ${event.destination_ip}:${event.destination_port || 'N/A'}</p>
+            ${event.url ? `<p><strong><i class="fas fa-link"></i> URL:</strong> <code>${event.url}</code></p>` : ''}
+            <p class="event-time"><i class="fas fa-clock"></i> ${formatDate(event.timestamp)}</p>
         </div>
     `).join('');
 }

@@ -2,10 +2,56 @@
 
 {% block title %}All Sessions - AnyRun Clone{% endblock %}
 
+{% block extra_css %}
+<style>
+    .sessions-list {
+        background: #0a2d47;
+        border-radius: 12px;
+        padding: 30px;
+        border: 1px solid #0f3654;
+    }
+
+    .sessions-table {
+        background: #052440;
+        border-radius: 8px;
+        overflow: hidden;
+    }
+
+    .sessions-table th {
+        padding: 15px;
+    }
+
+    .sessions-table td {
+        padding: 15px;
+    }
+
+    .sessions-table tr:nth-child(even) {
+        background: #0a2d47;
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+        color: #7b8795;
+    }
+
+    .empty-state i {
+        font-size: 80px;
+        color: #3b4d62;
+        margin-bottom: 25px;
+    }
+
+    .empty-state p {
+        font-size: 1.3em;
+        margin-bottom: 25px;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="container">
     <div class="page-header">
-        <h2>Analysis Sessions</h2>
+        <h2><i class="fas fa-history"></i> Analysis Sessions</h2>
         <p>View all past and current analysis sessions</p>
     </div>
 
@@ -14,12 +60,12 @@
             <table class="sessions-table">
                 <thead>
                     <tr>
-                        <th>Session ID</th>
-                        <th>Filename</th>
-                        <th>File Type</th>
-                        <th>Status</th>
-                        <th>Created</th>
-                        <th>Actions</th>
+                        <th><i class="fas fa-hashtag"></i> Session ID</th>
+                        <th><i class="fas fa-file"></i> Filename</th>
+                        <th><i class="fas fa-file-code"></i> File Type</th>
+                        <th><i class="fas fa-info-circle"></i> Status</th>
+                        <th><i class="fas fa-calendar"></i> Created</th>
+                        <th><i class="fas fa-cogs"></i> Actions</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -31,7 +77,9 @@
                         <td><span class="status-badge status-{{ session.status }}">{{ session.status }}</span></td>
                         <td>{{ session.created_at.strftime('%Y-%m-%d %H:%M') if session.created_at else 'N/A' }}</td>
                         <td>
-                            <a href="{{ url_for('view_session', session_id=session.session_id) }}" class="btn btn-small">View</a>
+                            <a href="{{ url_for('view_session', session_id=session.session_id) }}" class="btn btn-small btn-primary">
+                                <i class="fas fa-eye"></i> View
+                            </a>
                         </td>
                     </tr>
                     {% endfor %}
@@ -39,8 +87,11 @@
             </table>
         {% else %}
             <div class="empty-state">
+                <i class="fas fa-inbox"></i>
                 <p>No analysis sessions found.</p>
-                <a href="{{ url_for('index') }}" class="btn btn-primary">Upload a File</a>
+                <a href="{{ url_for('index') }}" class="btn btn-primary">
+                    <i class="fas fa-upload"></i> Upload a File
+                </a>
             </div>
         {% endif %}
     </div>
