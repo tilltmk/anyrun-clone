@@ -5,8 +5,15 @@ Werkzeug==3.0.1
 psutil>=5.9.8
 python-magic==0.4.27
 Pillow>=10.2.0
-# libvirt-python==9.10.0  # Optional: requires libvirt-devel system package
-scapy==2.5.0
-eventlet>=0.33.3
-websockify==0.11.0
-ffmpeg-python==0.2.0
+
+# Real Analysis Tools - NO FAKE DATA
+yara-python>=4.3.0      # Real YARA rule scanning
+pefile>=2023.2.7        # Real PE file analysis
+websockets>=11.0        # VNC WebSocket proxy for KVM stream
+
+# Optional but recommended
+# libvirt-python==9.10.0  # KVM VM management (requires libvirt-devel)
+scapy==2.5.0              # Real network traffic capture
+eventlet>=0.33.3          # Async support
+websockify==0.11.0        # VNC proxy support
+ffmpeg-python==0.2.0      # Video recording
