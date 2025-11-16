@@ -663,7 +663,15 @@
                 const result = await response.json();
 
                 if (result.success) {
-                    alert(result.message);
+                    // Show detailed success message with disk info
+                    const successMsg = `✅ VM Template Created Successfully!\n\n` +
+                        `VM Name: ${result.vm_name}\n` +
+                        `Disk Image: ${result.disk_path}\n` +
+                        `Disk Size: ${result.disk_size} GB\n` +
+                        `VNC Port: ${result.vnc_port}\n\n` +
+                        `The virtual disk has been created and attached to the VM.\n` +
+                        `Please proceed to Step 4 to start the VM and complete OS installation.`;
+                    alert(successMsg);
                     goToStep(4);
                 } else {
                     alert('Error: ' + result.error);
@@ -697,9 +705,12 @@
                             <h3>${template.name}</h3>
                             <span class="status-badge ${template.status}">${template.status}</span>
                         </div>
-                        <p>Memory: ${template.memory} MB | VNC Port: ${template.vnc_port}</p>
+                        <p>Memory: ${template.memory} MB | Disk: ${template.disk_size || 'N/A'} GB | VNC Port: ${template.vnc_port}</p>
+                        <div class="vnc-info" style="margin-top: 10px;">
+                            <strong>Disk Image:</strong> ${template.disk_path || 'Not configured'}
+                        </div>
                         <div class="vnc-info">
-                            VNC: vnc://localhost:${template.vnc_port}
+                            <strong>VNC:</strong> vnc://localhost:${template.vnc_port}
                         </div>
                         <div style="margin-top: 15px;">
                             <button class="btn btn-primary" onclick="startVM('${osType}')">Start VM</button>

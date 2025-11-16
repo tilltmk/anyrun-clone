@@ -341,6 +341,7 @@ class SetupManager:
             self.config['vm_templates'][os_type] = {
                 'name': vm_name,
                 'disk_path': disk_path,
+                'disk_size': disk_size,
                 'iso_path': iso_path,
                 'memory': memory,
                 'vcpus': vcpus,
@@ -355,8 +356,9 @@ class SetupManager:
                 'success': True,
                 'vm_name': vm_name,
                 'disk_path': disk_path,
+                'disk_size': disk_size,
                 'vnc_port': vnc_port,
-                'message': f'VM template created. Start the VM to begin OS installation via VNC on port {vnc_port}'
+                'message': f'VM template created successfully!\n\nDisk Image: {disk_path} ({disk_size} GB)\nMemory: {memory} MB\nVNC Port: {vnc_port}\n\nStart the VM to begin OS installation via VNC.'
             }
 
         except libvirt.libvirtError as e:

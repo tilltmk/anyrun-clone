@@ -40,6 +40,7 @@ class VMManager:
                 'memory': 4096,  # 4GB
                 'vcpus': 2,
                 'disk_path': '/var/lib/libvirt/images/windows10-analysis.qcow2',
+                'disk_size': 40,  # 40GB
                 'snapshot': 'clean-state',
                 'vnc_port': 5900,
                 'network': 'isolated'
@@ -49,6 +50,7 @@ class VMManager:
                 'memory': 2048,
                 'vcpus': 2,
                 'disk_path': '/var/lib/libvirt/images/windows7-analysis.qcow2',
+                'disk_size': 40,  # 40GB
                 'snapshot': 'clean-state',
                 'vnc_port': 5901,
                 'network': 'isolated'
@@ -58,6 +60,7 @@ class VMManager:
                 'memory': 2048,
                 'vcpus': 2,
                 'disk_path': '/var/lib/libvirt/images/ubuntu-analysis.qcow2',
+                'disk_size': 40,  # 40GB
                 'snapshot': 'clean-state',
                 'vnc_port': 5902,
                 'network': 'isolated'
@@ -79,6 +82,7 @@ class VMManager:
                             'memory': template.get('memory', 4096),
                             'vcpus': 2,
                             'disk_path': template.get('disk_path'),
+                            'disk_size': template.get('disk_size', 40),
                             'snapshot': template.get('snapshot', 'clean-state'),
                             'vnc_port': template.get('vnc_port', 5900),
                             'network': template.get('network', 'isolated')
