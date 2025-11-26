@@ -1,0 +1,18 @@
+{
+  "setup_complete": false,
+  "network_configured": true,
+  "vm_templates": {
+    "windows10": {
+      "name": "anyrun-windows10",
+      "disk_path": "/var/lib/libvirt/images/windows10-analysis.qcow2",
+      "disk_size": 40,
+      "iso_path": "/home/core/Downloads/Win10_22H2_German_x64v1.iso",
+      "memory": 4096,
+      "vcpus": 2,
+      "vnc_port": 5900,
+      "network": "isolated",
+      "status": "created",
+      "needs_installation": true
+    }
+  }
+}

@@ -236,11 +236,27 @@ class SetupManager:
 
         # Check if disk already exists
         if os.path.exists(disk_path):
-            return {
-                'success': False,
-                'error': f'Disk image already exists: {disk_path}',
-                'disk_path': disk_path
-            }
+            # If template already exists in config, return success
+            if os_type in self.config.get('vm_templates', {}):
+                existing_template = self.config['vm_templates'][os_type]
+                return {
+                    'success': True,
+                    'vm_name': existing_template.get('name', vm_name),
+                    'disk_path': disk_path,
+                    'disk_size': existing_template.get('disk_size', disk_size),
+                    'vnc_port': existing_template.get('vnc_port', 5900),
+                    'message': f'VM template already exists for {os_type}.\n\nDisk Image: {disk_path}\nMemory: {existing_template.get("memory", memory)} MB\nVNC Port: {existing_template.get("vnc_port", 5900)}\n\nUse the existing template or delete it first to create a new one.'
+                }
+
+            # If no template in config but disk exists, remove old disk and create new one
+            try:
+                os.remove(disk_path)
+            except OSError as e:
+                return {
+                    'success': False,
+                    'error': f'Disk image exists but could not be removed: {e}',
+                    'disk_path': disk_path
+                }
 
         # Create the QCOW2 disk image
         try:
