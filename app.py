@@ -105,8 +105,10 @@ def upload_file():
         # Generate unique session ID
         session_id = str(uuid.uuid4())
 
-        # Get analysis options from request
-        analysis_type = request.form.get('analysis_type', 'static')  # 'static' or 'dynamic'
+        # Get analysis options from request. Anything other than 'dynamic'
+        # falls back to 'static' - the value is persisted on the session, so an
+        # unvalidated string would make the UI report a mode that never ran.
+        analysis_type = 'dynamic' if request.form.get('analysis_type') == 'dynamic' else 'static'
         os_type = request.form.get('os_type', 'windows10')  # OS for dynamic analysis
 
         # Save uploaded file

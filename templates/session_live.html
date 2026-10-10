@@ -573,8 +573,13 @@
                 }
             }
 
+            // Read the persisted mode. Deriving it from status would mislabel
+            // a dynamic run as 'Static' during its static phase and after it
+            // completes, because 'running_in_vm' is only a transient status.
+            const mode = data.session.analysis_type === 'dynamic' ? 'Dynamic' : 'Static';
+            const inVm = data.session.status === 'running_in_vm';
             document.getElementById('analysisType').textContent =
-                data.session.status === 'running_in_vm' ? 'Dynamic' : 'Static';
+                inVm ? `${mode} (running in VM)` : mode;
         }
 
         function updateThreatScore(score) {
@@ -798,20 +803,28 @@
         }
 
         async function checkVNCConnection() {
+            // A missing VNC stream is not proof of a static run: the proxy may
+            // have died or the request may have failed. Report what actually
+            // happened instead of labelling every failure 'static mode'.
+            const statusEl = document.getElementById('vncStatus');
+            const isDynamic = analysisData?.session?.analysis_type === 'dynamic';
+
             try {
                 const response = await fetch(`/api/session/${sessionId}/vnc`);
                 const data = await response.json();
 
                 if (data.success) {
-                    document.getElementById('vncStatus').textContent =
+                    statusEl.textContent =
                         `VNC available on ${data.ws_url}. Connect with noVNC client.`;
+                } else if (isDynamic) {
+                    statusEl.textContent =
+                        `Dynamic analysis, but no VM display available: ${data.error || 'VNC proxy not running'}`;
                 } else {
-                    document.getElementById('vncStatus').textContent =
-                        'Static analysis mode - No VM display';
+                    statusEl.textContent = 'Static analysis mode - No VM display';
                 }
             } catch (error) {
-                document.getElementById('vncStatus').textContent =
-                    'Static analysis mode - No VM display';
+                statusEl.textContent =
+                    `VNC status unavailable (${error.message}) - mode: ${isDynamic ? 'dynamic' : 'static'}`;
             }
         }
 

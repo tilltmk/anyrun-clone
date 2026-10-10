@@ -400,10 +400,16 @@ class RealAnalyzer:
                 'data': data
             }, room=session_id)
 
-    def analyze_file_static(self, filepath, filename, session_id):
+    def analyze_file_static(self, filepath, filename, session_id,
+                            analysis_type='static', os_type=None):
         """
         Perform STATIC analysis only (no VM execution).
         This analyzes the file itself without running it.
+
+        analysis_type/os_type describe the mode the session was *requested* in.
+        analyze_file_dynamic() runs this method as its first phase and passes
+        'dynamic', so the session row states the real mode from the start
+        instead of being mislabelled during the static phase.
         """
         try:
             # Calculate file hashes
@@ -418,7 +424,9 @@ class RealAnalyzer:
                 file_hash=hashes['sha256'],
                 file_size=file_size,
                 file_type=file_type,
-                status='analyzing'
+                status='analyzing',
+                analysis_type=analysis_type,
+                os_type=os_type
             )
             db.session.add(session)
             db.session.commit()
@@ -476,6 +484,7 @@ class RealAnalyzer:
             session = AnalysisSession.query.filter_by(session_id=session_id).first()
             if session:
                 session.status = 'error'
+                session.error_message = str(e)
                 db.session.commit()
 
             return {
@@ -492,8 +501,12 @@ class RealAnalyzer:
         pcap_file = None
 
         try:
-            # First do static analysis
-            result = self.analyze_file_static(filepath, filename, session_id)
+            # First do static analysis - tagged as 'dynamic' so the session is
+            # never displayed as a static run during this phase
+            result = self.analyze_file_static(
+                filepath, filename, session_id,
+                analysis_type='dynamic', os_type=os_type
+            )
             if not result['success']:
                 return result
 
@@ -619,6 +632,7 @@ class RealAnalyzer:
             session = AnalysisSession.query.filter_by(session_id=session_id).first()
             if session:
                 session.status = 'error'
+                session.error_message = str(e)
                 db.session.commit()
 
             return {

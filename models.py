@@ -14,7 +14,13 @@ class AnalysisSession(db.Model):
     file_hash = db.Column(db.String(64), nullable=False)
     file_size = db.Column(db.Integer, nullable=False)
     file_type = db.Column(db.String(100))
-    status = db.Column(db.String(50), default='pending')  # pending, analyzing, completed, error
+    status = db.Column(db.String(50), default='pending')  # pending, analyzing, running_in_vm, completed, error
+    # Requested analysis mode. Persisted because status is transient:
+    # 'running_in_vm' only exists while the VM executes, so the mode cannot be
+    # derived from status once an analysis has finished or failed.
+    analysis_type = db.Column(db.String(20), default='static')  # static, dynamic
+    os_type = db.Column(db.String(50))  # VM template used for dynamic analysis
+    error_message = db.Column(db.Text)  # reason when status == 'error'
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     completed_at = db.Column(db.DateTime)
 
@@ -41,6 +47,9 @@ class AnalysisSession(db.Model):
             'file_size': self.file_size,
             'file_type': self.file_type,
             'status': self.status,
+            'analysis_type': self.analysis_type,
+            'os_type': self.os_type,
+            'error_message': self.error_message,
             'created_at': self.created_at.isoformat() if self.created_at else None,
             'completed_at': self.completed_at.isoformat() if self.completed_at else None
         }
