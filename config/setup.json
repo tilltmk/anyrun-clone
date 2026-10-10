@@ -1,5 +1,5 @@
 {
-  "setup_complete": false,
+  "setup_complete": true,
   "network_configured": true,
   "vm_templates": {
     "windows10": {
@@ -11,8 +11,9 @@
       "vcpus": 2,
       "vnc_port": 5900,
       "network": "isolated",
-      "status": "created",
-      "needs_installation": true
+      "status": "ready",
+      "needs_installation": false,
+      "snapshot": "clean-state"
     }
   }
 }

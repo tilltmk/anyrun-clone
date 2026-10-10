@@ -111,11 +111,50 @@ Zusammenfassung aller Analyse-Ergebnisse mit Threat Score
 # Dependencies installieren
 pip install -r requirements.txt
 
+# Umgebung prüfen (read-only, startet nichts)
+./start.sh --check
+
 # Anwendung starten
-python app.py
+./start.sh
 ```
 
-Die Anwendung läuft auf `http://localhost:5000`
+Die Anwendung läuft auf `http://127.0.0.1:5000`
+
+### Startskript
+
+`start.sh` prüft vor dem Start die komplette Laufzeitumgebung — Python-Version,
+Pflicht- und Optionalmodule, Arbeitsverzeichnisse, `SECRET_KEY`, freie Ports,
+`/dev/kvm`, libvirt-Erreichbarkeit, Isolation des `isolated`-Netzes,
+VM-Template, Clean-Snapshot und `tcpdump`-Capabilities. Bei Fehlern bricht es
+ab, statt mitten in einer Analyse zu scheitern.
+
+| Option | Wirkung |
+|---|---|
+| `--check` | Nur Preflight, keine Änderungen, kein Start |
+| `--static-only` | KVM überspringen, nur statische Analyse |
+| `--host ADDR` / `--port N` | Bind-Adresse / Port (Default `127.0.0.1:5000`) |
+| `--listen-all` | Bind auf `0.0.0.0` (UI ist unauthentifiziert!) |
+| `--reset-vm` | VM vor dem Start auf Clean-Snapshot zurücksetzen |
+| `--allow-dirty-vm` | Dynamische Analyse ohne Clean-Snapshot zulassen |
+| `--keep-vm-running` | Analyse-VM beim Beenden nicht stoppen |
+| `--debug` | Flask-Debug an (Reloader bleibt aus) |
+| `--log DATEI` | Ausgabe zusätzlich in Datei schreiben |
+
+Verhalten bei Problemen:
+
+- **VM läuft aus abgestürzter Session** → wird beendet und auf den
+  Clean-Snapshot zurückgesetzt, damit kein Sample in die nächste Analyse wirkt.
+- **Clean-Snapshot fehlt** → dynamische Analyse wird blockiert (kein stilles
+  Zurückfallen auf statisch). Bewusst umgehbar mit `--allow-dirty-vm`.
+- **Strg+C** → noch laufende Analyse-VM wird gestoppt (`--keep-vm-running`
+  schaltet das ab).
+
+Konfigurierbar auch über Umgebungsvariablen: `ANYRUN_HOST`, `ANYRUN_PORT`,
+`ANYRUN_DEBUG`, `ANYRUN_STATIC_ONLY`, `ANYRUN_PYTHON`, `ANYRUN_LOG`,
+`LIBVIRT_DEFAULT_URI`, `SECRET_KEY`.
+
+Fehlt `SECRET_KEY`, generiert das Skript einmalig einen und legt ihn in `.env`
+ab (`chmod 600`, via `.gitignore` ausgeschlossen) — kein Secret im Repo.
 
 ## 📚 API Endpoints
 

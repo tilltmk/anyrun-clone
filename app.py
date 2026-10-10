@@ -704,9 +704,30 @@ if __name__ == '__main__':
     print("  Static Analysis: Analyzes file without execution")
     print("  Dynamic Analysis: Executes file in isolated KVM VM")
     print("=" * 70)
-    print("Server starting on http://localhost:5000")
-    print("WebSocket enabled on ws://localhost:5000")
+
+    # Runtime settings - set by start.sh, overridable via environment
+    host = os.environ.get('ANYRUN_HOST', '127.0.0.1')
+    port = int(os.environ.get('ANYRUN_PORT', '5000'))
+    debug = os.environ.get('ANYRUN_DEBUG', '0') == '1'
+
+    if os.environ.get('ANYRUN_STATIC_ONLY') == '1' and not setup_manager.config.get('static_only'):
+        print("Mode override: Static Analysis Only (ANYRUN_STATIC_ONLY=1)")
+
+    display_host = 'localhost' if host in ('0.0.0.0', '::') else host
+    print(f"Server starting on http://{display_host}:{port}")
+    print(f"WebSocket enabled on ws://{display_host}:{port}")
+    if host in ('0.0.0.0', '::'):
+        print("WARNING: Bound to all interfaces - UI and VNC stream are unauthenticated")
     print("=" * 70)
 
-    # Run with SocketIO
-    socketio.run(app, debug=True, host='0.0.0.0', port=5000, allow_unsafe_werkzeug=True)
+    # Run with SocketIO.
+    # use_reloader stays off: the reloader forks a second process, which would
+    # create a second RealAnalyzer and duplicate VNC proxy threads/VM handles.
+    socketio.run(
+        app,
+        debug=debug,
+        host=host,
+        port=port,
+        use_reloader=False,
+        allow_unsafe_werkzeug=True
+    )
